@@ -167,3 +167,5 @@ Oviedo, Spain – June 2025
 ---
 
 ## License
+This project is licensed under the terms of the [MIT License](https://github.com/NanoBiostructuresRG/molraptor/blob/main/LICENSE).  
+See the LICENSE file for full details.
