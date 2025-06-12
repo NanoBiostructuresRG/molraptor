@@ -30,8 +30,8 @@ artifacts/
 !artifacts/summary.txt
 
 # Configuration (allow versioned config)
-!config.py
-configs/*.yaml
+#!config.py
+#configs/*.yaml
 
 # Raw input data (keep versioned CSV/XLSX if needed)
 data/
