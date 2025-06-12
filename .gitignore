@@ -1,0 +1,43 @@
+
+# Python cache and metadata
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+
+# Byte-compiled and temporary files
+*~
+*.bak
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# IPython/Jupyter
+.ipynb_checkpoints/
+
+# Numpy arrays and ML artifacts
+*.npy
+*.npz
+*.joblib
+*.model
+
+# Artifacts and output files
+artifacts/
+!artifacts/reports/
+!artifacts/summary.txt
+
+# Configuration (allow versioned config)
+!config.py
+configs/*.yaml
+
+# Raw input data (keep versioned CSV/XLSX if needed)
+data/
+
+# VSCode settings (if used)
+.vscode/
+
+# Configration settings 
+molraptor.egg-info/

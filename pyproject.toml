@@ -1,0 +1,31 @@
+[project]
+name = "molraptor"
+version = "1.0.0"
+description = "Modular pipeline that captures, curates, and encodes molecular data and fingerprints."
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+    "requests>=2.32",
+    "pandas>=2.2",
+    "pydantic>=2.11",
+    "typer>=0.16",
+    "pyyaml>=6.0",
+    "rdkit>=2024.9.6",
+]
+
+[project.scripts]
+molraptor = "molraptor.cli:app"
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+
+# ---------------- NEW: build-system & package discovery ---------------- #
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["molraptor*"]
+exclude = ["data*", "configs*"]
