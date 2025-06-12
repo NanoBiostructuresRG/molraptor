@@ -1,6 +1,7 @@
-# MOLRAPTOR: Molecular Learning via Rapid Processing of Topological Representations.
+# MOLRAPTOR: Molecular Learning via Rapid Processing of Topological Representations
 **Version 1.0.0 – Oviedo**
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ---
 
 ## Description
