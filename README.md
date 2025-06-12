@@ -20,7 +20,6 @@ The primary objective of MOLRAPTOR is to automate the preparation of molecular d
 ```text
 MOLRAPTOR/
 │
-├── PROJECT_STRUCTURE.md            # This file
 ├── pyproject.toml                  # Project metadata and build config
 ├── README.md                       # Overview and usage guide
 │
