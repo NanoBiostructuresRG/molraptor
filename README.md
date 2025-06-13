@@ -13,7 +13,7 @@
 ---
 
 ## Purpose
-The primary objective of MOLRAPTOR is to automate the preparation of molecular datasets for cheminformatics and machine learning applications. It ensures reproducibility, data integrity, and efficient encoding of chemical structures into fingerprint representations suitable for predictive modeling. The platform enables:
+The primary objective of MOLRAPTOR is to automate the preparation of molecular datasets for cheminformatics and **phase 1** machine learning applications. It ensures reproducibility, data integrity, and efficient encoding of chemical structures into fingerprint representations suitable for predictive modeling. The platform enables:
 - **Standardized data acquisition** from PubChem, including key molecular descriptors.
 - **Automated curation and validation** of chemical data to ensure structural and numeric integrity.
 - **Generation of machine-learning-ready fingerprints** using RDKit’s Morgan algorithm.
