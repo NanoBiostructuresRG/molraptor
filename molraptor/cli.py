@@ -33,7 +33,7 @@ def _global_parser() -> argparse.ArgumentParser:
     parent.add_argument(
         "--config",
         type=Path,
-        default=Path("configs/default.yaml"),
+        default=Path("examples/example_config.yaml"),
         metavar="PATH",
         help="Path to YAML configuration file. Defaults to configs/default.yaml.",
     )
