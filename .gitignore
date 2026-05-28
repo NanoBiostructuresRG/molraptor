@@ -1,10 +1,10 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 
-# Python cache and metadata
+# Python cache and compiled files
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
-*.pkl
 
 # Byte-compiled and temporary files
 *~
@@ -18,26 +18,35 @@ logs/
 # IPython/Jupyter
 .ipynb_checkpoints/
 
-# Numpy arrays and ML artifacts
+# NumPy arrays and ML artifacts
 *.npy
 *.npz
 *.joblib
+*.pkl
 *.model
 
 # Artifacts and output files
 artifacts/
-!artifacts/reports/
-!artifacts/summary.txt
 
-# Configuration (allow versioned config)
-#!config.py
-#configs/*.yaml
-
-# Raw input data (keep versioned CSV/XLSX if needed)
+# Input data
 data/
 
-# VSCode settings (if used)
+# Build and packaging
+molraptor.egg-info/
+*.egg-info/
+dist/
+build/
+site/
+
+# VSCode settings
 .vscode/
 
-# Configration settings 
-molraptor.egg-info/
+# pytest cache
+.pytest_cache/
+
+# Coverage
+.coverage
+htmlcov/
+
+# MkDocs
+.review_site/
