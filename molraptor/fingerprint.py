@@ -1,9 +1,10 @@
-"""Step 3: Generate Morgan fingerprints and legacy NPY artefacts.
+# SPDX-License-Identifier: LGPL-3.0-or-later
+"""Step 3 — Generate Morgan fingerprints and NPY artifacts.
 
-Outputs created in `artifacts/`:
-    - morgan_fp.csv            (CSV, 1024-bit fingerprints, human-readable)
-    - morgan_db_pparg.npy      (NumPy array, shape=N×1024)
-    - labels.npy               (NumPy array, shape=N,)
+Outputs created in ``artifacts/``:
+    - morgan_fp.csv        (CSV, human-readable fingerprints)
+    - morgan_db_*.npy      (NumPy array, shape=N×size)
+    - labels.npy           (NumPy array, shape=N,)
 """
 
 from __future__ import annotations
@@ -16,22 +17,24 @@ import pandas as pd
 from rdkit import Chem  # type: ignore
 from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator  # type: ignore
 
-from ..config import MolraptorConfig
-from ..utils.log_print import LogErrors
-from .base import BaseStep
+from .config import MolraptorConfig
+
+logger = logging.getLogger("molraptor.fingerprint")
 
 
-class FingerprintStep(BaseStep):
-    """Generate Morgan fingerprints and save CSV + NPY as per YAML."""
+class FingerprintStep:
+    """Generate Morgan fingerprints and save CSV + NPY as per YAML config."""
 
-    def __init__(self, cfg: MolraptorConfig, results: LogErrors) -> None:
-        super().__init__(cfg, results, logging.getLogger("molraptor.fingerprint"))
-        self._gen = GetMorganGenerator(radius=cfg.fingerprint.radius,
-                                       fpSize=cfg.fingerprint.size)
+    def __init__(self, cfg: MolraptorConfig) -> None:
+        self.cfg = cfg
+        self._gen = GetMorganGenerator(
+            radius=cfg.fingerprint.radius,
+            fpSize=cfg.fingerprint.size,
+        )
 
     def run(self, curated_csv: Path | str) -> Path:
         curated_csv = Path(curated_csv)
-        self.logger.info("Generating fingerprints from: %s", curated_csv)
+        logger.info("Generating fingerprints from: %s", curated_csv)
         df = pd.read_csv(curated_csv)
 
         for col in ["SMILES", "Label"]:
@@ -44,16 +47,15 @@ class FingerprintStep(BaseStep):
         if fps_array.shape[0] != labels_array.shape[0]:
             raise ValueError("Mismatch between fingerprints and labels count.")
 
-        # Save CSV
-        csv_path = self.results.save_dataframe(pd.DataFrame(fps_array),
-                                               Path(self.cfg.paths.fingerprint_output_file).name)
+        csv_path = Path(self.cfg.paths.fingerprint_output_file)
+        csv_path.parent.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(fps_array).to_csv(csv_path, index=False)
 
-        # Save NPY
         np.save(self.cfg.paths.fingerprint_array_file, fps_array)
         np.save(self.cfg.paths.labels_output_file, labels_array)
 
-        self.logger.info("Saved CSV  → %s", csv_path)
-        self.logger.info("Saved NPY  → %s", self.cfg.paths.fingerprint_array_file)
+        logger.info("Saved CSV  → %s", csv_path)
+        logger.info("Saved NPY  → %s", self.cfg.paths.fingerprint_array_file)
         return csv_path
 
     def _generate_fingerprints(self, smiles_list: list[str]) -> np.ndarray:
@@ -65,7 +67,7 @@ class FingerprintStep(BaseStep):
         for smiles in smiles_list:
             mol = Chem.MolFromSmiles(smiles)
             if mol is None:
-                self.logger.warning("Invalid SMILES skipped: %s", smiles)
+                logger.warning("Invalid SMILES skipped: %s", smiles)
                 fps.append(np.zeros(fp_size, dtype=int))
                 invalid_count += 1
                 continue
@@ -74,6 +76,6 @@ class FingerprintStep(BaseStep):
             Chem.DataStructs.ConvertToNumpyArray(fp, arr)
             fps.append(arr)
 
-        self.logger.info("Generated %d fingerprints (%d invalid SMILES)",
-                         len(fps), invalid_count)
+        logger.info("Generated %d fingerprints (%d invalid SMILES)",
+                    len(fps), invalid_count)
         return np.vstack(fps)

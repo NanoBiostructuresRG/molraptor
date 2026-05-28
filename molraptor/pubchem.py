@@ -1,22 +1,35 @@
-"""HTTP client for PubChem PUG REST."""
+# SPDX-License-Identifier: LGPL-3.0-or-later
+"""HTTP client for PubChem PUG REST API."""
 
 from __future__ import annotations
 
 import logging
 import time
-from pathlib import Path
-from typing import List
+from io import StringIO
+from typing import Generator, Iterable, List, TypeVar
 
 import pandas as pd
-from io import StringIO
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from ..config import PubChemCfg
-from ..utils.chunks import chunked
+from .config import PubChemCfg
 
 logger = logging.getLogger("molraptor.pubchem")
+
+T = TypeVar("T")
+
+
+def _chunked(iterable: Iterable[T], size: int) -> Generator[List[T], None, None]:
+    """Yield successive chunks from an iterable."""
+    chunk: List[T] = []
+    for item in iterable:
+        chunk.append(item)
+        if len(chunk) == size:
+            yield chunk
+            chunk = []
+    if chunk:
+        yield chunk
 
 
 class PubChemService:
@@ -37,14 +50,17 @@ class PubChemService:
         self.session.mount("https://", HTTPAdapter(max_retries=retries))
 
     def fetch(self, cids: List[int]) -> pd.DataFrame:
-        """
-        Fetch molecular properties for a list of PubChem CIDs.
+        """Fetch molecular properties for a list of PubChem CIDs.
 
-        Args:
-            cids: List of compound IDs
+        Parameters
+        ----------
+        cids : list of int
+            List of PubChem compound IDs.
 
-        Returns:
-            DataFrame with retrieved properties or empty DataFrame if all fail.
+        Returns
+        -------
+        pandas.DataFrame
+            DataFrame with retrieved properties, or empty DataFrame if all fail.
         """
         if not cids:
             logger.warning("Empty CID list received. Nothing to fetch.")
@@ -52,12 +68,12 @@ class PubChemService:
 
         frames = []
         total = len(cids)
-        for i, chunk in enumerate(chunked(cids, self.cfg.chunk_size)):
+        for i, chunk in enumerate(_chunked(cids, self.cfg.chunk_size)):
             logger.debug("Fetching chunk %d/%d", i + 1, (total // self.cfg.chunk_size) + 1)
             try:
                 frame = self._fetch_chunk(chunk)
                 frames.append(frame)
-            except Exception as exc:  # noqa:BLE001
+            except Exception as exc:  # noqa: BLE001
                 logger.error("Failed chunk %s: %s", chunk[:10], exc)
                 self._failed.update(chunk)
             time.sleep(self.cfg.sleep_seconds)

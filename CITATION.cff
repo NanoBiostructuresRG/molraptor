@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "MOLRAPTOR: Molecular Learning via Rapid Processing of Topological Representations"
+version: "0.1.1"
+date-released: "2026-05-28"
+authors:
+  - family-names: "Contreras-Torres"
+    given-names: "Flavio F."
+    orcid: "https://orcid.org/0000-0003-2375-131X"
+    affiliation: "Tecnologico de Monterrey"
+repository-code: "https://github.com/NanoBiostructuresRG/molraptor"
+license: "LGPL-3.0-or-later"
+abstract: >-
+  MOLRAPTOR is a modular pipeline for fetching, curating, and encoding
+  molecular datasets using PubChem data and RDKit's Morgan fingerprinting
+  algorithm. It automates the preparation of molecular datasets for
+  cheminformatics workflows and phase 1 machine learning applications
+  within the computational drug discovery pipeline.
+keywords:
+  - cheminformatics
+  - molecular fingerprints
+  - Morgan fingerprints
+  - PubChem
+  - RDKit
+  - drug discovery
+  - machine learning
+  - computational chemistry

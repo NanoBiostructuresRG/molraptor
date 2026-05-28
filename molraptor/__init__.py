@@ -1,10 +1,24 @@
-"""Molraptor package root."""
+# SPDX-License-Identifier: LGPL-3.0-or-later
+"""MOLRAPTOR — Molecular Learning via Rapid Processing of Topological Representations.
 
-from importlib.metadata import version, PackageNotFoundError
+Public API
+----------
+- ``MolraptorConfig`` — runtime configuration object.
+- ``validate_config``  — validate a configuration before execution.
+- ``run``              — execute the full MOLRAPTOR pipeline.
+- ``DataValidator``    — SMILES and column validation utilities.
+- ``__version__``      — current package version string.
+"""
 
-try:
-    __version__ = version("molraptor")
-except PackageNotFoundError:
-    __version__ = "1.0.0"
+from .version import __version__
+from .config import MolraptorConfig
+from .pipeline import run, validate_config
+from .validators import DataValidator
 
-from .pipeline import MolraptorPipeline  # noqa: F401
+__all__ = [
+    "__version__",
+    "MolraptorConfig",
+    "run",
+    "validate_config",
+    "DataValidator",
+]
