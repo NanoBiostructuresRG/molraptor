@@ -1,9 +1,9 @@
 [project]
 name = "molraptor"
-version = "1.0.0"
+version = "0.1.0"
 description = "Modular pipeline that captures, curates, and encodes molecular data and fingerprints."
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 
 dependencies = [
     "requests>=2.32",
@@ -19,7 +19,7 @@ molraptor = "molraptor.cli:app"
 
 [tool.black]
 line-length = 88
-target-version = ["py312"]
+target-version = ["py311"]
 
 # ---------------- NEW: build-system & package discovery ---------------- #
 [build-system]
