@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
 """Data validation helpers used across steps."""
 
 from __future__ import annotations

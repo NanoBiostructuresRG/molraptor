@@ -1,4 +1,9 @@
-"""Step 4: Check fingerprint integrity."""
+# SPDX-License-Identifier: LGPL-3.0-or-later
+"""Step 4 — Fingerprint integrity validation.
+
+Verifies that the generated fingerprint matrix has the expected
+dimensions and contains no missing values.
+"""
 
 from __future__ import annotations
 
@@ -7,29 +12,29 @@ from pathlib import Path
 
 import pandas as pd
 
-from ..config import MolraptorConfig
-from ..utils.log_print import LogErrors
-from .base import BaseStep
+from .config import MolraptorConfig
+
+logger = logging.getLogger("molraptor.fp_integrity")
 
 
-class FingerprintIntegrityStep(BaseStep):
+class FingerprintIntegrityStep:
     """Verify fingerprints have expected dimensions and no NaNs."""
 
-    def __init__(self, cfg: MolraptorConfig, results: LogErrors) -> None:
-        super().__init__(cfg, results, logging.getLogger("molraptor.fp_integrity"))
+    def __init__(self, cfg: MolraptorConfig) -> None:
+        self.cfg = cfg
 
     def run(self, fp_csv: Path | str) -> Path:
         fp_csv = Path(fp_csv)
 
         if not fp_csv.exists():
             msg = f"Fingerprint CSV file not found: {fp_csv}"
-            self.logger.error(msg)
+            logger.error(msg)
             raise FileNotFoundError(msg)
 
         df = pd.read_csv(fp_csv)
         self._check_integrity(df)
 
-        self.logger.info("✓ Fingerprint integrity check passed: %s", fp_csv)
+        logger.info("✓ Fingerprint integrity check passed: %s", fp_csv)
         return fp_csv
 
     def _check_integrity(self, df: pd.DataFrame) -> None:
@@ -43,4 +48,4 @@ class FingerprintIntegrityStep(BaseStep):
         if df.isna().any().any():
             raise ValueError("Fingerprint file contains NaN values")
 
-        self.logger.debug("Shape: %s | Expected bits: %d", df.shape, expected_bits)
+        logger.debug("Shape: %s | Expected bits: %d", df.shape, expected_bits)
