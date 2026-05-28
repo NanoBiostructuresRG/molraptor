@@ -1,0 +1,82 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "dev/v*"
+      - "release/*"
+
+jobs:
+  test-build:
+    name: Test and build (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install package and validation tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]" build twine
+
+      - name: Run tests
+        run: python -m pytest tests -p no:cacheprovider --basetemp .pytest_tmp
+
+      - name: Check CLI version
+        run: molraptor --version
+
+      - name: Check public import boundary
+        run: |
+          python -c "
+          import molraptor
+          expected = ['__version__', 'MolraptorConfig', 'run', 'validate_config', 'DataValidator']
+          assert set(molraptor.__all__) == set(expected), molraptor.__all__
+          for name in expected:
+              assert hasattr(molraptor, name), f'{name} missing'
+          assert '_MolraptorPipeline' not in molraptor.__all__, '_MolraptorPipeline must not be public'
+          assert 'ResultManager' not in molraptor.__all__,      'ResultManager must not be public'
+          assert 'FetchStep' not in molraptor.__all__,          'FetchStep must not be public'
+          print(molraptor.__version__, 'OK')
+          "
+
+      - name: Build distributions
+        run: python -m build
+
+      - name: Check distributions
+        run: python -m twine check dist/*
+
+  docs-build:
+    name: Build documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install docs dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[docs]"
+
+      - name: Build MkDocs site
+        run: mkdocs build --strict
