@@ -1,31 +1,108 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "molraptor"
-version = "0.1.0"
-description = "Modular pipeline that captures, curates, and encodes molecular data and fingerprints."
+dynamic = ["version"]
+description = "Modular pipeline for fetching, curating, and encoding molecular datasets using PubChem data and RDKit's Morgan fingerprinting algorithm."
 readme = "README.md"
+license = "LGPL-3.0-or-later"
+license-files = ["LICENSE", "COPYING", "COPYING.LESSER"]
+authors = [
+    { name = "Flavio F. Contreras-Torres", email = "contreras.flavio@tec.mx" },
+]
+keywords = [
+    "cheminformatics",
+    "molecular fingerprints",
+    "Morgan fingerprints",
+    "PubChem",
+    "RDKit",
+    "drug discovery",
+    "machine learning",
+    "computational chemistry",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 requires-python = ">=3.11"
-
 dependencies = [
+    "numpy>=1.23",
+    "pandas>=1.5",
     "requests>=2.32",
-    "pandas>=2.2",
-    "pydantic>=2.11",
-    "typer>=0.16",
     "pyyaml>=6.0",
+    "pydantic>=2.11",
     "rdkit>=2024.9.6",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "build>=1.0",
+    "hatchling>=1.18",
+    "twine>=4.0",
+]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.25",
+]
+
+[project.urls]
+Homepage = "https://github.com/NanoBiostructuresRG/molraptor"
+Repository = "https://github.com/NanoBiostructuresRG/molraptor"
+Issues = "https://github.com/NanoBiostructuresRG/molraptor/issues"
+Documentation = "https://nanobiostructuresrg.github.io/molraptor/"
+
 [project.scripts]
-molraptor = "molraptor.cli:app"
+molraptor = "molraptor.cli:main"
 
-[tool.black]
-line-length = 88
-target-version = ["py311"]
+[tool.hatch.version]
+path = "molraptor/version.py"
 
-# ---------------- NEW: build-system & package discovery ---------------- #
-[build-system]
-requires = ["setuptools>=64", "wheel"]
-build-backend = "setuptools.build_meta"
+[tool.hatch.build.targets.wheel]
+packages = ["molraptor"]
 
-[tool.setuptools.packages.find]
-include = ["molraptor*"]
-exclude = ["data*", "configs*"]
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/.git",
+    "/.github",
+    "/.mypy_cache",
+    "/.pytest_cache",
+    "/.ruff_cache",
+    "/.venv",
+    "/__pycache__",
+    "*/__pycache__",
+    "*.egg-info",
+    "/*.egg-info",
+    "/build",
+    "/dist",
+    "/docs",
+    "/mkdocs.yml",
+    "/data",
+    "/artifacts",
+    "/logs",
+    "/configs",
+    "/site",
+    "/htmlcov",
+    "/.coverage",
+    "/test_output.txt",
+    "*.pyc",
+    "*.pyo",
+    "*.npy",
+    "*.npz",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+tmp_path_retention_count = 0
+tmp_path_retention_policy = "none"

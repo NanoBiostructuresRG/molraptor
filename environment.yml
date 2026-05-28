@@ -10,6 +10,5 @@ dependencies:
   - requests
   - pyyaml
   - pydantic
-  - typer
   - rdkit
   - pytest
