@@ -14,10 +14,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from rdkit import Chem  # type: ignore
-from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator  # type: ignore
 
 from .config import MolraptorConfig
+from .morgan import MorganFingerprintProfile, encode_fingerprints
 
 logger = logging.getLogger("molraptor.fingerprint")
 
@@ -27,10 +26,6 @@ class FingerprintStep:
 
     def __init__(self, cfg: MolraptorConfig) -> None:
         self.cfg = cfg
-        self._gen = GetMorganGenerator(
-            radius=cfg.fingerprint.radius,
-            fpSize=cfg.fingerprint.size,
-        )
 
     def run(self, curated_csv: Path | str) -> Path:
         curated_csv = Path(curated_csv)
@@ -41,8 +36,36 @@ class FingerprintStep:
             if col not in df.columns:
                 raise ValueError(f"Required column '{col}' not found in input CSV.")
 
-        fps_array = self._generate_fingerprints(df["SMILES"].tolist())
-        labels_array = df["Label"].to_numpy()
+        smiles = df["SMILES"].tolist()
+        non_string_indices = [
+            index
+            for index, value in enumerate(smiles)
+            if not isinstance(value, str)
+        ]
+        if non_string_indices:
+            raise ValueError(
+                "Invalid SMILES at input row indices: "
+                f"{non_string_indices}"
+            )
+
+        profile = MorganFingerprintProfile(
+            radius=self.cfg.fingerprint.radius,
+            fp_size=self.cfg.fingerprint.size,
+        )
+        encoding = encode_fingerprints(smiles, profile)
+        invalid_indices = [
+            status.input_index
+            for status in encoding.input_statuses
+            if status.status == "invalid"
+        ]
+        if invalid_indices:
+            raise ValueError(
+                "Invalid SMILES at input row indices: "
+                f"{invalid_indices}"
+            )
+
+        fps_array = encoding.fingerprints
+        labels_array = df.iloc[list(encoding.valid_indices)]["Label"].to_numpy()
 
         if fps_array.shape[0] != labels_array.shape[0]:
             raise ValueError("Mismatch between fingerprints and labels count.")
@@ -57,25 +80,3 @@ class FingerprintStep:
         logger.info("Saved CSV  → %s", csv_path)
         logger.info("Saved NPY  → %s", self.cfg.paths.fingerprint_array_file)
         return csv_path
-
-    def _generate_fingerprints(self, smiles_list: list[str]) -> np.ndarray:
-        """Convert SMILES to Morgan fingerprints with fallback for invalid ones."""
-        fp_size = self.cfg.fingerprint.size
-        fps = []
-        invalid_count = 0
-
-        for smiles in smiles_list:
-            mol = Chem.MolFromSmiles(smiles)
-            if mol is None:
-                logger.warning("Invalid SMILES skipped: %s", smiles)
-                fps.append(np.zeros(fp_size, dtype=int))
-                invalid_count += 1
-                continue
-            fp = self._gen.GetFingerprint(mol)
-            arr = np.zeros(fp_size, dtype=int)
-            Chem.DataStructs.ConvertToNumpyArray(fp, arr)
-            fps.append(arr)
-
-        logger.info("Generated %d fingerprints (%d invalid SMILES)",
-                    len(fps), invalid_count)
-        return np.vstack(fps)
