@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/NanoBiostructuresRG/molraptor/actions/workflows/ci.yml/badge.svg)](https://github.com/NanoBiostructuresRG/molraptor/actions/workflows/ci.yml)
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.1.1-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)]()
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)]()
 
 **MOLRAPTOR** is a pre-stable modular pipeline for fetching, curating, and
@@ -64,7 +64,7 @@ Project: MOLRAPTOR
 PyPI distribution: molraptor
 Import package: molraptor
 CLI: molraptor
-Version: 0.1.1
+Version: 0.2.0
 License: LGPL-3.0-or-later
 Status: alpha / pre-stable
 ```

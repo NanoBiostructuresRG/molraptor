@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 type: software
 title: "MOLRAPTOR: Molecular Learning via Rapid Processing of Topological Representations"
-version: "0.1.1"
-date-released: "2026-05-28"
+version: "0.2.0"
+date-released: "2026-07-16"
 authors:
   - family-names: "Contreras-Torres"
     given-names: "Flavio F."

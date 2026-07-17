@@ -7,7 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [0.2.0] - 2026-07-16
+
+### Added
+
+- Added a public, in-memory API for generating binary Morgan fingerprints from ordered SMILES.
+- Added `MorganFingerprintProfile`, `FingerprintEncodingResult`,
+  `FingerprintInputStatus`, and `encode_fingerprints` to the public API.
+- Added explicit profile serialization, deterministic input and profile hashes,
+  RDKit and MOLRAPTOR version metadata, and traceable valid/invalid input status.
+- Added focused tests for in-memory fingerprint encoding and the file-based
+  fingerprint step.
+
+### Changed
+
+- Refactored the file-based fingerprint pipeline to reuse the public Morgan
+  encoder instead of maintaining a separate implementation.
+- Preserved CSV and NPY outputs for valid datasets.
+- Made the file-based pipeline reject invalid SMILES before writing fingerprint
+  or label artifacts.
+- Documented the distinction between the in-memory library API and the
+  file-based pipeline.
+- Updated CI public-API checks for the new exported symbols.
 
 ---
 
