@@ -36,7 +36,7 @@ With verbose logging:
 molraptor run --config examples/example_config.yaml --verbose
 ```
 
-## Run from Python
+## Run the File-based Pipeline from Python
 
 ```python
 from molraptor import MolraptorConfig, run
@@ -44,6 +44,19 @@ from molraptor import MolraptorConfig, run
 config = MolraptorConfig.load("examples/example_config.yaml")
 run(config)
 ```
+
+## Choose the Right Interface
+
+Use the public in-memory Morgan API when SMILES are already available and you
+need NumPy fingerprints and metadata without creating files. It requires no
+labels or pipeline configuration, and reports invalid inputs while returning
+rows for valid inputs.
+
+Use `run(config)` when you need the complete file-based workflow shown below.
+That pipeline fetches and curates data and writes configured artifacts. Its
+fingerprint stage is strict: any invalid SMILES aborts fingerprint and label
+output rather than returning a partial matrix. See the [API Reference](api.md)
+for the in-memory example and full result contract.
 
 ## Expected Workflow
 

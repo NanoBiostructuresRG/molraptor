@@ -159,8 +159,33 @@ from molraptor import MolraptorConfig
 from molraptor import validate_config
 from molraptor import run
 from molraptor import DataValidator
+from molraptor import MorganFingerprintProfile
+from molraptor import FingerprintEncodingResult
+from molraptor import FingerprintInputStatus
+from molraptor import encode_fingerprints
 from molraptor import __version__
 ```
+
+### In-memory Morgan fingerprints
+
+`MorganFingerprintProfile` defines explicit, serializable Morgan settings.
+`encode_fingerprints` accepts an ordered sequence of SMILES and returns a
+`FingerprintEncodingResult` containing a binary `uint8` NumPy matrix plus
+reproducibility metadata. Each original input has a corresponding
+`FingerprintInputStatus` with its input index, validity, matrix-row alignment,
+and RDKit-generated canonical SMILES or invalid-input reason.
+
+The in-memory API preserves input order and duplicates among valid molecules.
+Invalid SMILES are reported in the statuses and omitted from the matrix; they
+are never represented by zero vectors. Encoding performs **zero file I/O** and
+does not require labels, paths, CSV files, or a pipeline configuration. See the
+[API Reference](https://nanobiostructuresrg.github.io/molraptor/api/) for the
+concise public-import example.
+
+This differs from the file-based pipeline: `run(config)` executes the configured
+fetch, curate, fingerprint, and validation stages and writes CSV/NPY artifacts.
+Its fingerprint step is strict and rejects the dataset without writing
+fingerprint or label artifacts if any SMILES is invalid.
 
 Modules not listed above are importable directly but are not part of the public
 contract and may change before 1.0.

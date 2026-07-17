@@ -43,7 +43,17 @@ jobs:
         run: |
           python -c "
           import molraptor
-          expected = ['__version__', 'MolraptorConfig', 'run', 'validate_config', 'DataValidator']
+          expected = [
+              '__version__',
+              'MolraptorConfig',
+              'run',
+              'validate_config',
+              'DataValidator',
+              'MorganFingerprintProfile',
+              'FingerprintEncodingResult',
+              'FingerprintInputStatus',
+              'encode_fingerprints',
+          ]
           assert set(molraptor.__all__) == set(expected), molraptor.__all__
           for name in expected:
               assert hasattr(molraptor, name), f'{name} missing'
