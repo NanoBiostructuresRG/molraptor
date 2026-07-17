@@ -22,12 +22,9 @@ MOLRAPTOR/
 │   ├── stylesheets/
 │   │   └── extra.css
 │   ├── api.md
-│   ├── cli.md
-│   ├── configuration.md
+│   ├── changelog.md
 │   ├── index.md
-│   ├── installation.md
-│   ├── quickstart.md
-│   └── release.md
+│   └── usage.md
 ├── examples/
 │   └── example_config.yaml
 ├── molraptor/
@@ -80,11 +77,9 @@ https://nanobiostructuresrg.github.io/molraptor/
 
 Key pages:
 
-- [Installation](https://nanobiostructuresrg.github.io/molraptor/installation/)
-- [Quick Start](https://nanobiostructuresrg.github.io/molraptor/quickstart/)
-- [CLI Reference](https://nanobiostructuresrg.github.io/molraptor/cli/)
-- [Configuration](https://nanobiostructuresrg.github.io/molraptor/configuration/)
+- [Usage](https://nanobiostructuresrg.github.io/molraptor/usage/)
 - [API Reference](https://nanobiostructuresrg.github.io/molraptor/api/)
+- [Changelog](https://nanobiostructuresrg.github.io/molraptor/changelog/)
 
 ## Installation
 
@@ -214,7 +209,7 @@ are intentionally ignored by Git.
 
 ## Validation
 
-The current `dev/v0.1.1` branch targets:
+Validate changes with:
 
 ```bash
 python -m pytest tests/ -v

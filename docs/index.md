@@ -16,13 +16,11 @@
       using PubChem data and RDKit's Morgan fingerprinting algorithm.
     </p>
     <div class="ms-actions">
-      <a class="md-button md-button--primary" href="installation/">Install</a>
-      <a class="md-button" href="quickstart/">Quick start</a>
+      <a class="md-button md-button--primary" href="usage/">Get started</a>
       <a class="md-button" href="api/">API Reference</a>
     </div>
     <div class="ms-badges" aria-label="Project badges">
       <img alt="CI" src="https://github.com/NanoBiostructuresRG/molraptor/actions/workflows/ci.yml/badge.svg">
-      <img alt="Version" src="https://img.shields.io/badge/version-v0.1.1-blue.svg">
       <img alt="Python versions" src="https://img.shields.io/badge/python-3.11%20%7C%203.12-blue">
       <img alt="License: LGPL v3+" src="https://img.shields.io/badge/License-LGPL_v3%2B-blue.svg">
     </div>
@@ -30,9 +28,8 @@
 </section>
 
 !!! note "Pre-stable"
-    MOLRAPTOR is currently in alpha-stage development (`v0.1.x`). Publication
-    on PyPI is prepared under the package name `molraptor`. Public APIs may
-    change before 1.0.
+    MOLRAPTOR is currently in alpha-stage development. Public APIs may change
+    before 1.0.
 
 ## Workflow
 
@@ -123,17 +120,15 @@ run(config)
 
 | Page | Purpose |
 |------|---------|
-| [Installation](installation.md) | Supported Python versions, local install, and optional dependencies. |
-| [Quick Start](quickstart.md) | Minimal CLI and Python workflow using the bundled example config. |
-| [CLI Reference](cli.md) | `molraptor run`, config files, verbose mode, and version checks. |
-| [Configuration](configuration.md) | YAML configuration schema, inputs, and outputs. |
+| [Usage](usage.md) | Installation, quick start, CLI, YAML configuration, and pipeline outputs. |
 | [API Reference](api.md) | Public Python API generated from docstrings. |
-| [Release Notes](release.md) | Version history and validation notes. |
+| [Changelog](changelog.md) | Project history sourced from the repository changelog. |
 
 ## Citation
 
-If you use MOLRAPTOR in your research, please cite it using the metadata in
-[CITATION.cff](https://github.com/NanoBiostructuresRG/molraptor/blob/main/CITATION.cff).
+```text
+Contreras-Torres, F. F. (2026). MOLRAPTOR: Molecular Learning via Rapid Processing of Topological Representations. Zenodo. https://doi.org/10.5281/zenodo.20434420
+```
 
 ## License
 
