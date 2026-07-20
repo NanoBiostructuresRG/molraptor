@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 [project]
 name = "molraptor"
 dynamic = ["version"]
-description = "Modular pipeline for fetching, curating, and encoding molecular datasets using PubChem data and RDKit's Morgan fingerprinting algorithm."
+description = "Encode ordered SMILES as traceable Morgan fingerprints using RDKit."
 readme = "README.md"
 license = "LGPL-3.0-or-later"
 license-files = ["LICENSE", "COPYING", "COPYING.LESSER"]
@@ -18,7 +18,6 @@ keywords = [
     "cheminformatics",
     "molecular fingerprints",
     "Morgan fingerprints",
-    "PubChem",
     "RDKit",
     "drug discovery",
     "machine learning",
@@ -38,8 +37,6 @@ requires-python = ">=3.11"
 dependencies = [
     "numpy>=2.4",
     "pandas>=1.5",
-    "requests>=2.32",
-    "pyyaml>=6.0",
     "pydantic>=2.11",
     "rdkit>=2024.9.6",
 ]

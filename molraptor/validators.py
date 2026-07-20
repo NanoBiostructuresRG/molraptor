@@ -3,17 +3,11 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Iterable
 
 import pandas as pd
 
-try:
-    from rdkit import Chem  # type: ignore
-except ImportError:  # pragma: no cover
-    Chem = None  # fallback for envs without rdkit
-
-logger = logging.getLogger("molraptor.validators")
+from .morgan import MorganFingerprintProfile, encode_fingerprints
 
 
 class DataValidator:
@@ -27,8 +21,5 @@ class DataValidator:
 
     @staticmethod
     def is_valid_smiles(smiles: str) -> bool:
-        if Chem is None:
-            logger.warning("RDKit not installed; skipping SMILES validation")
-            return True
-        mol = Chem.MolFromSmiles(smiles)
-        return mol is not None
+        result = encode_fingerprints([smiles], MorganFingerprintProfile())
+        return result.input_statuses[0].status == "valid"
