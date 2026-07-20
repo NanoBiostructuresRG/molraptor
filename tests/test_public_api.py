@@ -58,9 +58,5 @@ def test_dunder_all_contains_expected_symbols():
     assert set(molraptor.__all__) == expected
 
 
-def test_private_classes_not_in_dunder_all():
-    assert "_MolraptorPipeline" not in molraptor.__all__
-    assert "ResultManager" not in molraptor.__all__
-    assert "FetchStep" not in molraptor.__all__
-    assert "CurateStep" not in molraptor.__all__
+def test_file_workflow_class_not_in_dunder_all():
     assert "FingerprintStep" not in molraptor.__all__

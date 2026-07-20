@@ -37,9 +37,9 @@ def test_config_accepts_custom_column_output_and_profile(tmp_path):
     assert config.profile is profile
 
 
-def test_config_rejects_unknown_legacy_fields(tmp_path):
+def test_config_rejects_unknown_fields(tmp_path):
     with pytest.raises(ValidationError):
         MolraptorConfig(
             input_path=tmp_path / "molecules.csv",
-            pubchem={"properties": ["SMILES"]},
+            unknown_option=True,
         )
