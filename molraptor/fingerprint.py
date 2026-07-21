@@ -19,7 +19,7 @@ OUTPUT_FILENAMES = (
     "fingerprints.npy",
     "fingerprints.csv",
     "input_statuses.csv",
-    "metadata.json",
+    "encoding_metadata.json",
 )
 
 
@@ -75,7 +75,7 @@ def _read_smiles(path: Path, smiles_column: str) -> list[str]:
 
 
 def _write_outputs(
-    output_dir: Path,
+    config: MolraptorConfig,
     result: FingerprintEncodingResult,
 ) -> None:
     status_records = [
@@ -87,8 +87,18 @@ def _write_outputs(
         status_frame["fingerprint_index"],
         dtype="Int64",
     )
-    metadata = result.serialize_metadata()
+    input_format = config.input_path.suffix.lower().removeprefix(".")
+    metadata = {
+        "source_file_name": config.input_path.name,
+        "input_format": input_format,
+        "smiles_column": (
+            config.smiles_column if input_format == "csv" else None
+        ),
+        "input_count": len(result.input_statuses),
+        **result.serialize_metadata(),
+    }
 
+    output_dir = config.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
     with TemporaryDirectory(prefix=".molraptor-", dir=output_dir) as temp_name:
         staging_dir = Path(temp_name)
@@ -105,7 +115,7 @@ def _write_outputs(
             staging_dir / "input_statuses.csv",
             index=False,
         )
-        (staging_dir / "metadata.json").write_text(
+        (staging_dir / "encoding_metadata.json").write_text(
             json.dumps(metadata, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
         )
@@ -131,7 +141,7 @@ class FingerprintStep:
         if result.valid_count == 0:
             raise ValueError("Input contains zero valid SMILES")
 
-        _write_outputs(self.config.output_dir, result)
+        _write_outputs(self.config, result)
         return result
 
 

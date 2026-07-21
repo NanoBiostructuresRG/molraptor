@@ -60,6 +60,13 @@ def test_csv_uses_exact_configured_smiles_column(tmp_path, column_name):
     ]
     assert result.valid_indices == (0, 1, 2)
     np.testing.assert_array_equal(result.fingerprints[0], result.fingerprints[2])
+    metadata = json.loads(
+        (output_dir / "encoding_metadata.json").read_text("utf-8")
+    )
+    assert metadata["source_file_name"] == "molecules.csv"
+    assert metadata["input_format"] == "csv"
+    assert metadata["smiles_column"] == column_name
+    assert metadata["input_count"] == 3
 
 
 def test_csv_empty_cell_is_preserved_as_an_empty_input(tmp_path):
@@ -96,6 +103,13 @@ def test_txt_removes_only_line_endings_and_preserves_every_input(tmp_path):
     ]
     assert result.valid_indices[:2] == (0, 1)
     np.testing.assert_array_equal(result.fingerprints[0], result.fingerprints[1])
+    metadata = json.loads(
+        (tmp_path / "outputs" / "encoding_metadata.json").read_text("utf-8")
+    )
+    assert metadata["source_file_name"] == "molecules.txt"
+    assert metadata["input_format"] == "txt"
+    assert metadata["smiles_column"] is None
+    assert metadata["input_count"] == 5
 
 
 def test_mixed_batch_writes_exact_traceable_output_contract(tmp_path):
@@ -126,17 +140,24 @@ def test_mixed_batch_writes_exact_traceable_output_contract(tmp_path):
     np.testing.assert_array_equal(csv_matrix, result.fingerprints)
     assert npy_matrix.dtype == np.uint8
 
-    statuses = pd.read_csv(
+    status_frame = pd.read_csv(
         output_dir / "input_statuses.csv",
         dtype=str,
         keep_default_na=False,
-    ).to_dict(orient="records")
+    )
+    assert list(status_frame.columns) == [
+        "input_index",
+        "input_smiles",
+        "status",
+        "fingerprint_index",
+        "invalid_reason",
+    ]
+    statuses = status_frame.to_dict(orient="records")
     assert statuses == [
         {
             "input_index": "0",
             "input_smiles": "CCO",
             "status": "valid",
-            "rdkit_canonical_smiles": "CCO",
             "fingerprint_index": "0",
             "invalid_reason": "",
         },
@@ -144,7 +165,6 @@ def test_mixed_batch_writes_exact_traceable_output_contract(tmp_path):
             "input_index": "1",
             "input_smiles": "not-a-smiles",
             "status": "invalid",
-            "rdkit_canonical_smiles": "",
             "fingerprint_index": "",
             "invalid_reason": "parse_failure",
         },
@@ -152,7 +172,6 @@ def test_mixed_batch_writes_exact_traceable_output_contract(tmp_path):
             "input_index": "2",
             "input_smiles": "",
             "status": "invalid",
-            "rdkit_canonical_smiles": "",
             "fingerprint_index": "",
             "invalid_reason": "empty_molecule",
         },
@@ -160,14 +179,23 @@ def test_mixed_batch_writes_exact_traceable_output_contract(tmp_path):
             "input_index": "3",
             "input_smiles": "c1ccccc1",
             "status": "valid",
-            "rdkit_canonical_smiles": "c1ccccc1",
             "fingerprint_index": "1",
             "invalid_reason": "",
         },
     ]
 
-    metadata = json.loads((output_dir / "metadata.json").read_text("utf-8"))
-    assert metadata == result.serialize_metadata()
+    metadata_path = output_dir / "encoding_metadata.json"
+    assert metadata_path.exists()
+    assert not (output_dir / "metadata.json").exists()
+    metadata = json.loads(metadata_path.read_text("utf-8"))
+    assert metadata == {
+        "source_file_name": "molecules.csv",
+        "input_format": "csv",
+        "smiles_column": "SMILES",
+        "input_count": 4,
+        **result.serialize_metadata(),
+    }
+    assert "input_statuses" not in metadata
     assert metadata["valid_indices"] == [0, 3]
     assert metadata["matrix_shape"] == [2, 64]
     assert metadata["matrix_dtype"] == "uint8"

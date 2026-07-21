@@ -47,7 +47,6 @@ def test_existing_morgan_implementation_matches_golden_scientific_contract():
             "input_index": 0,
             "input_smiles": "C[C@H](O)Cl",
             "status": "valid",
-            "rdkit_canonical_smiles": "C[C@H](O)Cl",
             "fingerprint_index": 0,
             "invalid_reason": None,
         },
@@ -55,7 +54,6 @@ def test_existing_morgan_implementation_matches_golden_scientific_contract():
             "input_index": 1,
             "input_smiles": "not-a-smiles",
             "status": "invalid",
-            "rdkit_canonical_smiles": None,
             "fingerprint_index": None,
             "invalid_reason": "parse_failure",
         },
@@ -63,7 +61,6 @@ def test_existing_morgan_implementation_matches_golden_scientific_contract():
             "input_index": 2,
             "input_smiles": "c1ccccc1",
             "status": "valid",
-            "rdkit_canonical_smiles": "c1ccccc1",
             "fingerprint_index": 1,
             "invalid_reason": None,
         },
@@ -71,7 +68,6 @@ def test_existing_morgan_implementation_matches_golden_scientific_contract():
             "input_index": 3,
             "input_smiles": "",
             "status": "invalid",
-            "rdkit_canonical_smiles": None,
             "fingerprint_index": None,
             "invalid_reason": "empty_molecule",
         },
@@ -106,6 +102,17 @@ def test_profile_validates_size_radius_and_unknown_settings():
         MorganFingerprintProfile(radius=-1)
     with pytest.raises(ValidationError):
         MorganFingerprintProfile(unknown_setting=True)
+
+
+def test_input_status_has_exact_approved_fields_without_canonical_smiles():
+    assert list(FingerprintInputStatus.model_fields) == [
+        "input_index",
+        "input_smiles",
+        "status",
+        "fingerprint_index",
+        "invalid_reason",
+    ]
+    assert "rdkit_canonical_smiles" not in FingerprintInputStatus.model_fields
 
 
 def test_encoding_is_deterministic_and_reports_versions_and_hashes():
@@ -151,9 +158,7 @@ def test_order_duplicates_and_metadata_alignment_are_preserved():
         1,
         2,
     ]
-    assert result.input_statuses[0].rdkit_canonical_smiles == "CCO"
     assert result.input_statuses[0].invalid_reason is None
-    assert result.input_statuses[1].rdkit_canonical_smiles is None
     np.testing.assert_array_equal(result.fingerprints[0], result.fingerprints[2])
     assert not np.array_equal(result.fingerprints[0], result.fingerprints[1])
 
@@ -184,7 +189,6 @@ def test_invalid_input_status_requires_a_stable_reason():
             input_index=0,
             input_smiles="invalid",
             status="invalid",
-            rdkit_canonical_smiles=None,
             fingerprint_index=None,
         )
 
@@ -194,31 +198,16 @@ def test_invalid_input_status_requires_a_stable_reason():
     [
         {
             "status": "valid",
-            "rdkit_canonical_smiles": None,
-            "fingerprint_index": 0,
-            "invalid_reason": None,
-        },
-        {
-            "status": "valid",
-            "rdkit_canonical_smiles": "CCO",
             "fingerprint_index": None,
             "invalid_reason": None,
         },
         {
             "status": "valid",
-            "rdkit_canonical_smiles": "CCO",
             "fingerprint_index": 0,
             "invalid_reason": "parse_failure",
         },
         {
             "status": "invalid",
-            "rdkit_canonical_smiles": "CCO",
-            "fingerprint_index": None,
-            "invalid_reason": "parse_failure",
-        },
-        {
-            "status": "invalid",
-            "rdkit_canonical_smiles": None,
             "fingerprint_index": 0,
             "invalid_reason": "parse_failure",
         },
@@ -243,7 +232,6 @@ def test_input_status_rejects_negative_indices(input_index, fingerprint_index):
             input_index=input_index,
             input_smiles="CCO",
             status="valid",
-            rdkit_canonical_smiles="CCO",
             fingerprint_index=fingerprint_index,
         )
 
@@ -330,9 +318,7 @@ def test_result_metadata_serialization_is_json_compatible_without_matrix():
     assert metadata["rdkit_version"] == result.rdkit_version
     assert metadata["ordered_input_hash"] == result.ordered_input_hash
     assert metadata["profile_hash"] == result.profile_hash
-    assert metadata["input_statuses"][0]["rdkit_canonical_smiles"] == "CCO"
-    assert "canonical_smiles" not in metadata["input_statuses"][0]
-    assert metadata["input_statuses"][1]["invalid_reason"] == "parse_failure"
+    assert "input_statuses" not in metadata
 
 
 def test_encoding_performs_no_file_io(tmp_path, monkeypatch):

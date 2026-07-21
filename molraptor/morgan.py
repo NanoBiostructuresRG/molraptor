@@ -56,7 +56,6 @@ class FingerprintInputStatus(BaseModel):
     input_index: int = Field(ge=0)
     input_smiles: str
     status: Literal["valid", "invalid"]
-    rdkit_canonical_smiles: str | None
     fingerprint_index: int | None = Field(ge=0)
     invalid_reason: Literal["parse_failure", "empty_molecule"] | None = None
 
@@ -65,10 +64,6 @@ class FingerprintInputStatus(BaseModel):
         """Keep status-specific metadata complete and mutually exclusive."""
 
         if self.status == "valid":
-            if self.rdkit_canonical_smiles is None:
-                raise ValueError(
-                    "valid input status requires rdkit_canonical_smiles"
-                )
             if self.fingerprint_index is None:
                 raise ValueError("valid input status requires fingerprint_index")
             if self.invalid_reason is not None:
@@ -78,10 +73,6 @@ class FingerprintInputStatus(BaseModel):
         else:
             if self.invalid_reason is None:
                 raise ValueError("invalid input status requires an invalid_reason")
-            if self.rdkit_canonical_smiles is not None:
-                raise ValueError(
-                    "invalid input status cannot include rdkit_canonical_smiles"
-                )
             if self.fingerprint_index is not None:
                 raise ValueError(
                     "invalid input status cannot include fingerprint_index"
@@ -130,9 +121,6 @@ class FingerprintEncodingResult:
         return {
             "profile": dict(self.profile),
             "valid_indices": list(self.valid_indices),
-            "input_statuses": [
-                status.model_dump(mode="json") for status in self.input_statuses
-            ],
             "valid_count": self.valid_count,
             "invalid_count": self.invalid_count,
             "matrix_shape": list(self.matrix_shape),
@@ -201,7 +189,6 @@ def encode_fingerprints(
                     input_index=input_index,
                     input_smiles=input_smiles,
                     status="invalid",
-                    rdkit_canonical_smiles=None,
                     fingerprint_index=None,
                     invalid_reason="parse_failure",
                 )
@@ -213,7 +200,6 @@ def encode_fingerprints(
                     input_index=input_index,
                     input_smiles=input_smiles,
                     status="invalid",
-                    rdkit_canonical_smiles=None,
                     fingerprint_index=None,
                     invalid_reason="empty_molecule",
                 )
@@ -231,11 +217,6 @@ def encode_fingerprints(
                 input_index=input_index,
                 input_smiles=input_smiles,
                 status="valid",
-                rdkit_canonical_smiles=Chem.MolToSmiles(
-                    molecule,
-                    canonical=True,
-                    isomericSmiles=True,
-                ),
                 fingerprint_index=fingerprint_index,
             )
         )
