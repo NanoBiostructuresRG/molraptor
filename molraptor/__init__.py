@@ -1,17 +1,9 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
-"""MOLRAPTOR — Molecular Learning via Rapid Processing of Topological Representations.
+"""Public API for in-memory and file-based Morgan fingerprint encoding.
 
-Public API
-----------
-- ``MorganFingerprintProfile`` - explicit Morgan encoding settings.
-- ``FingerprintEncodingResult`` - in-memory fingerprints and metadata.
-- ``FingerprintInputStatus`` - per-input encoding status metadata.
-- ``encode_fingerprints`` - encode SMILES without pipeline or file I/O.
-- ``MolraptorConfig`` — runtime configuration object.
-- ``validate_config``  — validate a configuration before execution.
-- ``run``              — execute the full MOLRAPTOR pipeline.
-- ``DataValidator``    — SMILES and column validation utilities.
-- ``__version__``      — current package version string.
+MOLRAPTOR accepts user-provided SMILES and exposes an in-memory encoder plus a
+single CSV/TXT file workflow. The package does not fetch, curate, harmonize,
+canonicalize, or replace supplied SMILES before fingerprint calculation.
 """
 
 from .version import __version__

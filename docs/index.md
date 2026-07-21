@@ -2,7 +2,7 @@
 
 <section class="ms-hero">
   <div class="ms-hero__content">
-    <p class="ms-eyebrow">Molecular data pipeline</p>
+    <p class="ms-eyebrow">SMILES-first fingerprinting</p>
     <div class="ms-brand" aria-label="MOLRAPTOR">
       <span class="ms-dotmark" aria-hidden="true">
         <span></span><span></span><span></span>
@@ -12,17 +12,19 @@
       <span class="ms-wordmark">MOLRAPTOR</span>
     </div>
     <p class="ms-subtitle">
-      Modular pipeline for fetching, curating, and encoding molecular datasets
-      using PubChem data and RDKit's Morgan fingerprinting algorithm.
+      Scientific library and command-line tool for generating reproducible
+      Morgan fingerprints from user-provided molecular representations.
     </p>
     <div class="ms-actions">
-      <a class="md-button md-button--primary" href="usage/">Get started</a>
+      <a class="md-button md-button--primary" href="usage/#installation">Install</a>
       <a class="md-button" href="api/">API Reference</a>
+      <a class="md-button" href="changelog/">Changelog</a>
     </div>
     <div class="ms-badges" aria-label="Project badges">
-      <img alt="CI" src="https://github.com/NanoBiostructuresRG/molraptor/actions/workflows/ci.yml/badge.svg">
-      <img alt="Python versions" src="https://img.shields.io/badge/python-3.11%20%7C%203.12-blue">
-      <img alt="License: LGPL v3+" src="https://img.shields.io/badge/License-LGPL_v3%2B-blue.svg">
+      <a href="https://github.com/NanoBiostructuresRG/molrapto/actions/workflows/ci.yml"><img src="https://github.com/NanoBiostructuresRG/molraptor/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+      <a href="https://pypi.org/project/molraptor/"><img src="https://img.shields.io/pypi/v/molraptor.svg" alt="PyPI"></a>
+      <a href="https://pypi.org/project/molraptor/"><img src="https://img.shields.io/pypi/pyversions/molraptor.svg" alt="Python versions"></a>
+      <a href="https://github.com/NanoBiostructuresRG/molraptor/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-LGPL_v3%2B-blue.svg" alt="License: LGPL v3+"></a>
     </div>
   </div>
 </section>
@@ -37,28 +39,28 @@
   <div class="ms-flow">
     <div class="ms-flow__item">
       <span class="ms-flow__kicker">Input</span>
-      <strong>CSV</strong>
-      <small>PubChem CIDs + labels</small>
+      <strong>Python / CSV / TXT</strong>
+      <small>user-provided SMILES</small>
     </div>
     <div class="ms-flow__item">
-      <span class="ms-flow__kicker">Fetch</span>
-      <strong>PubChem</strong>
-      <small>molecular properties</small>
-    </div>
-    <div class="ms-flow__item">
-      <span class="ms-flow__kicker">Curate</span>
-      <strong>molraptor run</strong>
-      <small>filter + validate</small>
+      <span class="ms-flow__kicker">Parse</span>
+      <strong>RDKit</strong>
+      <small>molecular graph construction</small>
     </div>
     <div class="ms-flow__item">
       <span class="ms-flow__kicker">Encode</span>
-      <strong>RDKit</strong>
-      <small>Morgan fingerprints</small>
+      <strong>Morgan</strong>
+      <small>binary bit vectors</small>
+    </div>
+    <div class="ms-flow__item">
+      <span class="ms-flow__kicker">Trace</span>
+      <strong>Status + hashes</strong>
+      <small>alignment and provenance</small>
     </div>
     <div class="ms-flow__item ms-flow__item--artifact">
       <span class="ms-flow__kicker">Output</span>
-      <strong>.npy / .csv</strong>
-      <small>ML-ready artifacts</small>
+      <strong>NumPy / CSV / JSON</strong>
+      <small>reproducible artifacts</small>
     </div>
   </div>
 </section>
@@ -67,27 +69,27 @@
   <div class="ms-grid ms-grid--four">
     <article class="ms-card">
       <span class="ms-card__icon">01</span>
-      <h3>Fetch</h3>
-      <p>Retrieve molecular properties from PubChem REST API for a list
-      of compound IDs (CIDs).</p>
+      <h3>Supply</h3>
+      <p>Provide ordered SMILES directly through Python or from a CSV or
+      UTF-8 TXT file.</p>
     </article>
     <article class="ms-card">
       <span class="ms-card__icon">02</span>
-      <h3>Curate</h3>
-      <p>Filter and validate the dataset according to required columns
-      and data types defined in the YAML config.</p>
+      <h3>Encode</h3>
+      <p>Generate binary Morgan fingerprints using an explicit,
+      serializable RDKit profile.</p>
     </article>
     <article class="ms-card">
       <span class="ms-card__icon">03</span>
-      <h3>Encode</h3>
-      <p>Generate Morgan fingerprints using RDKit and save ML-ready
-      NumPy arrays and CSV artifacts.</p>
+      <h3>Trace</h3>
+      <p>Preserve input order and duplicates while recording validity,
+      matrix-row alignment, hashes, and runtime versions.</p>
     </article>
     <article class="ms-card">
       <span class="ms-card__icon">04</span>
-      <h3>Validate</h3>
-      <p>Verify fingerprint matrix integrity — expected dimensions and
-      absence of missing values.</p>
+      <h3>Export</h3>
+      <p>Write fingerprint matrices, per-input statuses, and encoding
+      metadata for downstream scientific workflows.</p>
     </article>
   </div>
 </section>
@@ -96,32 +98,47 @@
 
 | MOLRAPTOR does | MOLRAPTOR does not |
 |----------------|-------------------|
-| Fetch molecular properties from PubChem. | Train machine learning models. |
-| Curate and validate chemical datasets. | Perform dimensionality reduction. |
-| Generate Morgan fingerprints via RDKit. | Support non-PubChem data sources (yet). |
-| Output ML-ready `.npy` and `.csv` artifacts. | Handle 3D molecular structures. |
-| Log failed CIDs for reproducibility. | Support alternative fingerprint types (yet). |
+| Accept user-provided SMILES through Python, CSV, or TXT. | Retrieve molecular records from PubChem or other databases. |
+| Parse SMILES with RDKit for fingerprint calculation. | Curate, harmonize, canonicalize, or replace supplied SMILES. |
+| Generate binary Morgan fingerprints. | Generate labels or activity classes. |
+| Preserve input order and duplicates. | Train or evaluate machine-learning models. |
+| Isolate invalid individual inputs. | Calculate molecular descriptors or 3D conformations. |
+| Record profiles, hashes, versions, and row alignment. | Provide alternative fingerprint algorithms in v0.3.0. |
 
 ## Quick Example
 
 ```bash
-pip install molraptor
-molraptor run --config examples/example_config.yaml
+python -m pip install molraptor
+
+molraptor run \
+  --input molecules.csv \
+  --smiles-column SMILES \
+  --output-dir artifacts
 ```
 
 ```python
-from molraptor import MolraptorConfig, run
+from molraptor import MorganFingerprintProfile, encode_fingerprints
 
-config = MolraptorConfig.load("examples/example_config.yaml")
-run(config)
+profile = MorganFingerprintProfile(radius=2, fp_size=2048)
+
+result = encode_fingerprints(
+    ["CCO", "not-a-smiles", "c1ccccc1"],
+    profile,
+)
+
+print(result.fingerprints.shape)
+# (2, 2048)
 ```
+
+The in-memory API, file workflow, and command-line interface use the same
+scientific encoding core.
 
 ## Documentation
 
 | Page | Purpose |
 |------|---------|
-| [Usage](usage.md) | Installation, quick start, CLI, YAML configuration, and pipeline outputs. |
-| [API Reference](api.md) | Public Python API generated from docstrings. |
+| [Usage](usage.md) | Installation, CLI, CSV/TXT inputs, Python workflows, outputs, and failure handling. |
+| [API Reference](api.md) | Current public Python contracts and examples. |
 | [Changelog](changelog.md) | Project history sourced from the repository changelog. |
 
 ## Citation

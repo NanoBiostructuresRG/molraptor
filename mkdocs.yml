@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
 site_name: MOLRAPTOR
-site_description: Modular pipeline for fetching, curating, and encoding molecular datasets using PubChem data and RDKit's Morgan fingerprinting algorithm
+site_description: SMILES-first scientific library and command-line tool for generating reproducible Morgan fingerprints with RDKit
 site_url: https://nanobiostructuresrg.github.io/molraptor/
 repo_url: https://github.com/NanoBiostructuresRG/molraptor
 repo_name: NanoBiostructuresRG/molraptor

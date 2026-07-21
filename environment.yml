@@ -5,10 +5,8 @@ channels:
 
 dependencies:
   - python=3.11
-  - numpy
+  - numpy>=2.4
   - pandas
-  - requests
-  - pyyaml
   - pydantic
   - rdkit
   - pytest

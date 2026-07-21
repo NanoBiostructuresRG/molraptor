@@ -1,34 +1,59 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
-"""Data validation helpers used across steps."""
+"""Public validation utilities for tabular data and SMILES."""
 
 from __future__ import annotations
 
-import logging
 from typing import Iterable
 
 import pandas as pd
 
-try:
-    from rdkit import Chem  # type: ignore
-except ImportError:  # pragma: no cover
-    Chem = None  # fallback for envs without rdkit
-
-logger = logging.getLogger("molraptor.validators")
+from .morgan import MorganFingerprintProfile, encode_fingerprints
 
 
 class DataValidator:
-    """Static validation utilities."""
+    """Stateless validation utilities."""
 
     @staticmethod
     def ensure_required_columns(df: pd.DataFrame, required: Iterable[str]) -> None:
+        """Require named columns in a tabular input.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            Table whose columns are inspected.
+        required : iterable of str
+            Column names that must be present.
+
+        Raises
+        ------
+        ValueError
+            If one or more required columns are absent.
+        """
+
         missing = [col for col in required if col not in df.columns]
         if missing:
             raise ValueError(f"Missing required columns: {missing}")
 
     @staticmethod
     def is_valid_smiles(smiles: str) -> bool:
-        if Chem is None:
-            logger.warning("RDKit not installed; skipping SMILES validation")
-            return True
-        mol = Chem.MolFromSmiles(smiles)
-        return mol is not None
+        """Return whether one SMILES produces a non-empty RDKit molecule.
+
+        Parameters
+        ----------
+        smiles : str
+            Exact user-provided SMILES string to validate.
+
+        Returns
+        -------
+        bool
+            ``True`` when the in-memory encoder classifies the input as valid;
+            otherwise ``False``.
+
+        Notes
+        -----
+        Validation delegates to :func:`encode_fingerprints`; the supplied
+        string is not curated, harmonized, canonicalized, or replaced.
+        """
+
+        result = encode_fingerprints([smiles], MorganFingerprintProfile())
+        return result.input_statuses[0].status == "valid"

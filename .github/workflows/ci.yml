@@ -57,9 +57,6 @@ jobs:
           assert set(molraptor.__all__) == set(expected), molraptor.__all__
           for name in expected:
               assert hasattr(molraptor, name), f'{name} missing'
-          assert '_MolraptorPipeline' not in molraptor.__all__, '_MolraptorPipeline must not be public'
-          assert 'ResultManager' not in molraptor.__all__,      'ResultManager must not be public'
-          assert 'FetchStep' not in molraptor.__all__,          'FetchStep must not be public'
           print(molraptor.__version__, 'OK')
           "
 

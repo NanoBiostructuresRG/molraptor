@@ -1,122 +1,76 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
-"""Public execution doorway for MOLRAPTOR.
-
-This module exposes two public functions:
-
-- ``validate_config`` — validate a :class:`~molraptor.config.MolraptorConfig`
-  before execution.
-- ``run`` — validate and execute the full MOLRAPTOR pipeline.
-
-The internal pipeline class is private and should not be imported
-or used directly.
-"""
+"""Public execution functions for the CSV/TXT fingerprint workflow."""
 
 from __future__ import annotations
 
-import logging
-import numpy as np
-import pandas as pd
-from pathlib import Path
-
 from .config import MolraptorConfig
-from .fetch import FetchStep
-from .curate import CurateStep
 from .fingerprint import FingerprintStep
-from .fp_integrity import FingerprintIntegrityStep
-from .result_manager import ResultManager
-
-__all__ = ["validate_config", "run"]
-
-logger = logging.getLogger("molraptor.pipeline")
+from .morgan import FingerprintEncodingResult
 
 
-def validate_config(config: MolraptorConfig | None = None) -> MolraptorConfig:
-    """Validate a MOLRAPTOR runtime configuration object.
+def validate_config(config: MolraptorConfig) -> MolraptorConfig:
+    """Validate the workflow configuration type.
 
     Parameters
     ----------
-    config : MolraptorConfig, optional
-        Configuration to validate. When ``None``, loads from
-        ``examples/example_config.yaml``.
+    config : MolraptorConfig
+        Configuration to validate.
 
     Returns
     -------
     MolraptorConfig
-        The validated configuration object.
+        The same validated configuration instance.
 
     Raises
     ------
     ValueError
-        If one or more validation checks fail.
-
-    Examples
-    --------
-    >>> from molraptor import MolraptorConfig, validate_config
-    >>> config = MolraptorConfig.load("examples/example_config.yaml")
-    >>> validated = validate_config(config)  # doctest: +SKIP
+        If ``config`` is not a :class:`MolraptorConfig` instance.
     """
-    if config is None:
-        config = MolraptorConfig.load("examples/example_config.yaml")
+
     if not isinstance(config, MolraptorConfig):
         raise ValueError(f"Expected MolraptorConfig, got {type(config)}")
     return config
 
 
-def run(config: MolraptorConfig | None = None) -> None:
-    """Validate and execute the full MOLRAPTOR pipeline.
+def run(config: MolraptorConfig) -> FingerprintEncodingResult:
+    """Encode a configured CSV or TXT file and persist its artifacts.
 
     Parameters
     ----------
-    config : MolraptorConfig, optional
-        Runtime configuration. When ``None``, loads from
-        ``examples/example_config.yaml``.
+    config : MolraptorConfig
+        Input file, output directory, CSV column, and Morgan profile.
+
+    Returns
+    -------
+    FingerprintEncodingResult
+        The single in-memory result used to create all output artifacts.
 
     Raises
     ------
     ValueError
-        If configuration validation fails before execution begins.
+        If the configuration object has the wrong type, the configured CSV
+        SMILES column is missing, or the input contains zero valid SMILES.
+    OSError
+        If the input or output cannot be accessed through the file system.
+
+    Notes
+    -----
+    Individual invalid SMILES do not stop a batch when another input is valid.
+    A batch with zero valid SMILES is a global file-workflow failure and writes
+    no artifacts.
+
+    A successful execution writes ``fingerprints.npy``, ``fingerprints.csv``,
+    ``input_statuses.csv``, and ``encoding_metadata.json``. Encoding data derive
+    from one :class:`FingerprintEncodingResult`; source-identification metadata
+    derive from the validated configuration.
 
     Examples
     --------
-    >>> from molraptor import MolraptorConfig, run
-    >>> config = MolraptorConfig.load("examples/example_config.yaml")
-    >>> run(config)  # doctest: +SKIP
+    >>> config = MolraptorConfig(input_path="molecules.csv")
+    >>> result = run(config)  # doctest: +SKIP
     """
-    active_config = validate_config(config)
-    _MolraptorPipeline(cfg=active_config).run()
+
+    return FingerprintStep(validate_config(config)).run()
 
 
-class _MolraptorPipeline:
-    """Internal pipeline orchestrator. Not part of the public API."""
-
-    def __init__(self, cfg: MolraptorConfig) -> None:
-        self.cfg = cfg
-        self.steps = [
-            FetchStep(cfg),
-            CurateStep(cfg),
-            FingerprintStep(cfg),
-            FingerprintIntegrityStep(cfg),
-        ]
-
-    def run(self) -> None:
-        data = self.cfg.paths.raw_input_file
-        for step in self.steps:
-            step_name = step.__class__.__name__
-            logger.info("→ Starting: %s", step_name)
-            try:
-                data = step.run(data)
-                logger.info("✓ Completed: %s", step_name)
-            except Exception as e:
-                logger.error("✗ Failed at %s: %s", step_name, e)
-                raise
-
-        self._write_report()
-        logger.info("Pipeline completed successfully.")
-
-    def _write_report(self) -> None:
-        """Load curated data and fingerprints, write summary report."""
-        curated_df = pd.read_csv(self.cfg.paths.curated_output_file)
-        fingerprints = np.load(self.cfg.paths.fingerprint_array_file)
-        result_path = Path("artifacts") / "summary.txt"
-        ResultManager(result_path).write_results(curated_df, fingerprints)
-        logger.info("Report saved to %s", result_path)
+__all__ = ["validate_config", "run"]
