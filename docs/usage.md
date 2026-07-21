@@ -1,21 +1,27 @@
 # Usage
 
-This guide covers installation, the file-based pipeline, the command-line
-interface, and YAML configuration. For the zero-file-I/O Morgan encoder, see
-the [API Reference](api.md#in-memory-morgan-fingerprinting).
+This guide covers installation, CSV/TXT inputs, the command-line interface,
+the Python file workflow, the in-memory Morgan encoder, output artifacts, and
+failure handling. For detailed public contracts, see the
+[API Reference](api.md).
 
 ## Installation
 
-MOLRAPTOR supports Python 3.11 and 3.12. Clone the repository and install the
-package in editable mode:
+MOLRAPTOR supports Python 3.11 and 3.12.
+
+Install the latest published version from PyPI:
+
+```bash
+python -m pip install molraptor
+```
+
+Install the current repository in editable mode for local development:
 
 ```bash
 git clone https://github.com/NanoBiostructuresRG/molraptor.git
 cd molraptor
 python -m pip install -e .
 ```
-
-This installs both the `molraptor` Python package and console command.
 
 Install optional development or documentation tools only when needed:
 
@@ -36,66 +42,74 @@ Verify the installation:
 
 ```bash
 molraptor --help
+molraptor run --help
 molraptor --version
 ```
 
 ## Choose an Interface
 
-MOLRAPTOR provides two distinct workflows:
+MOLRAPTOR provides two interfaces backed by the same in-memory scientific
+encoder:
 
-- Use the public in-memory Morgan API when SMILES are already available and
-  you need NumPy fingerprints and metadata without files, labels, or pipeline
-  configuration. Invalid inputs are reported while valid results are retained.
-- Use the file-based pipeline when you need PubChem fetching, curation,
-  fingerprint generation, integrity validation, and configured CSV/NPY
-  artifacts. Its fingerprint stage is strict: an invalid SMILES aborts
-  fingerprint and label output.
+- Use the **command-line or Python file workflow** when SMILES are stored in a
+  CSV or UTF-8 TXT file and you need persisted NumPy, CSV, and JSON artifacts.
+- Use the **in-memory Python API** when SMILES are already available as an
+  ordered sequence and no file I/O is required.
 
-## File-based Quick Start
+Both interfaces preserve input order and duplicates. Invalid individual SMILES
+remain traceable without preventing valid inputs from being encoded.
 
-The pipeline expects a CSV containing at least `PubChem CID` and `Label`:
+## Command-Line Quick Start
 
-```text
-PubChem CID,Label
-2244,1
-3672,0
-5090,1
-```
+### CSV input
 
-Point `examples/example_config.yaml` at the input file, then run:
+For a CSV containing a `SMILES` column:
 
 ```bash
-molraptor run --config examples/example_config.yaml
+molraptor run \
+  --input molecules.csv \
+  --output-dir artifacts
 ```
 
-The same pipeline is available from Python:
+Select another column explicitly with `--smiles-column`:
 
-```python
-from molraptor import MolraptorConfig, run
-
-config = MolraptorConfig.load("examples/example_config.yaml")
-run(config)
+```bash
+molraptor run \
+  --input molecules.csv \
+  --smiles-column SMILES_Harmonized \
+  --output-dir artifacts
 ```
 
-The complete workflow is:
+MOLRAPTOR does not guess aliases or select a different SMILES column
+implicitly.
 
-```text
-CSV (CIDs + labels) -> fetch -> curate -> fingerprint -> validate -> NPY / CSV
+### TXT input
+
+For a UTF-8 TXT file containing one SMILES per line:
+
+```bash
+molraptor run \
+  --input molecules.txt \
+  --output-dir artifacts
 ```
 
-After a successful run, configured outputs include:
+### Morgan settings
 
-```text
-artifacts/
-|-- morgan_fp.csv       # Human-readable fingerprint matrix
-|-- morgan_db_*.npy     # NumPy fingerprint matrix
-|-- labels.npy          # Labels aligned with fingerprint rows
-`-- summary.txt         # Pipeline report
+The default profile uses radius 2, 2048 bits, and chirality disabled.
+
+```bash
+molraptor run \
+  --input molecules.csv \
+  --smiles-column SMILES \
+  --output-dir artifacts \
+  --radius 3 \
+  --fp-size 1024 \
+  --include-chirality
 ```
 
-## Command-line Interface
+## Command-Line Interface
 
-Display command help or package version:
+Display command help or the installed package version:
 
 ```bash
 molraptor --help
@@ -103,101 +117,261 @@ molraptor run --help
 molraptor --version
 ```
 
-Run with the bundled configuration, a custom configuration, verbose logging,
-or both:
+The `molraptor run` command accepts:
 
-```bash
-molraptor run
-molraptor run --config path/to/config.yaml
-molraptor run --verbose
-molraptor run --config path/to/config.yaml --verbose
+| Option | Purpose |
+|--------|---------|
+| `--input PATH` | Source CSV or UTF-8 TXT file |
+| `--smiles-column NAME` | CSV column containing SMILES; default: `SMILES` |
+| `--output-dir PATH` | Destination directory for the four output artifacts |
+| `--radius INTEGER` | Morgan neighborhood radius; default: `2` |
+| `--fp-size INTEGER` | Fingerprint bit-vector size; default: `2048` |
+| `--include-chirality` | Include chirality in Morgan fingerprint generation |
+
+The input format is selected from the source-file extension. YAML
+configuration and `--config` are not part of the v0.3.0 interface.
+
+## Input Formats
+
+### CSV
+
+A CSV input must contain the explicitly configured SMILES column.
+
+```csv
+SMILES
+CCO
+c1ccccc1
+not-a-smiles
+CCO
 ```
 
-The `--config` flag defaults to `examples/example_config.yaml`. The `--verbose`
-flag enables `INFO`-level progress messages; otherwise logging begins at
-`WARNING`.
+The default column name is `SMILES`. Input order, duplicates, and empty cells
+are preserved for validation and traceability.
 
-## Configuration
+Only the selected column is used for encoding. MOLRAPTOR does not retrieve
+records, infer labels, curate unrelated columns, or replace the supplied
+molecular representations.
 
-MOLRAPTOR loads one YAML file through `MolraptorConfig`. A complete example is:
+### TXT
 
-```yaml
-paths:
-  raw_input_file: data/dataset.csv
-  raw_output_file: data/properties.csv
-  curated_output_file: data/properties_curated.csv
-  error_log_file: logs/error_cids.txt
-  fingerprint_output_file: artifacts/morgan_fp.csv
-  fingerprint_array_file: artifacts/morgan_db.npy
-  labels_output_file: artifacts/labels.npy
+A TXT input must be UTF-8 encoded and contain one SMILES record per line.
 
-pubchem:
-  properties:
-    - MolecularWeight
-    - XLogP
-    - HBondDonorCount
-    - HBondAcceptorCount
-    - RotatableBondCount
-    - TPSA
-    - Complexity
-    - SMILES
-  timeout: 5
-  max_retries: 3
-  sleep_seconds: 0.2
-  chunk_size: 400
-
-fingerprint:
-  radius: 2
-  size: 1024
-
-curate:
-  required_columns:
-    - PubChem CID
-    - Label
-    - MolecularWeight
-    - Complexity
-    - SMILES
-  dtype_map:
-    Label: int64
+```text
+CCO
+c1ccccc1
+not-a-smiles
+CCO
 ```
 
-### `paths`
+MOLRAPTOR removes only the trailing `CRLF`, `CR`, or `LF` line ending from each
+record. All other content is preserved, including order, duplicates,
+whitespace, and empty lines.
 
-| Key | Purpose |
-|-----|---------|
-| `raw_input_file` | Input dataset containing PubChem CIDs and labels |
-| `raw_output_file` | Dataset merged with fetched PubChem properties |
-| `curated_output_file` | Filtered and type-normalized dataset |
-| `error_log_file` | CIDs that failed during PubChem fetching |
-| `fingerprint_output_file` | Morgan fingerprints as CSV |
-| `fingerprint_array_file` | Morgan fingerprints as a NumPy array |
-| `labels_output_file` | Labels aligned with fingerprint rows |
+## Python File Workflow
 
-### `pubchem`
+Configure and execute the CSV/TXT workflow directly from Python:
 
-| Key | Default | Purpose |
-|-----|---------|---------|
-| `properties` | Required | PubChem properties to fetch |
-| `timeout` | `5` | Request timeout in seconds |
-| `max_retries` | `3` | Maximum request attempts |
-| `sleep_seconds` | `0.2` | Delay between chunk requests |
-| `chunk_size` | `400` | CIDs requested per chunk |
+```python
+from molraptor import (
+    MolraptorConfig,
+    MorganFingerprintProfile,
+    run,
+)
 
-### `fingerprint`
+config = MolraptorConfig(
+    input_path="molecules.csv",
+    smiles_column="SMILES_Harmonized",
+    output_dir="artifacts",
+    profile=MorganFingerprintProfile(
+        radius=2,
+        fp_size=2048,
+        include_chirality=False,
+    ),
+)
 
-| Key | Purpose |
-|-----|---------|
-| `radius` | Morgan fingerprint radius |
-| `size` | Fingerprint bit-vector size |
+result = run(config)
 
-The file-based step maps these values to the public Morgan profile. It rejects
-the complete fingerprint operation if any input SMILES is invalid and reports
-the affected zero-based input row indices before writing fingerprint or label
-artifacts.
+print(result.fingerprints.shape)
+print(result.valid_indices)
+```
 
-### `curate`
+`run` reads the ordered input records, calls the public in-memory encoder,
+validates the global workflow result, and publishes the four output artifacts.
 
-| Key | Purpose |
-|-----|---------|
-| `required_columns` | Columns that must exist and contain non-null values |
-| `dtype_map` | Output dtype enforcement, such as `Label: int64` |
+For TXT input, `smiles_column` is not used:
+
+```python
+from molraptor import MolraptorConfig, MorganFingerprintProfile, run
+
+config = MolraptorConfig(
+    input_path="molecules.txt",
+    output_dir="artifacts",
+    profile=MorganFingerprintProfile(),
+)
+
+result = run(config)
+```
+
+## In-Memory Encoding
+
+Use `encode_fingerprints` when the SMILES are already available in memory:
+
+```python
+from molraptor import MorganFingerprintProfile, encode_fingerprints
+
+profile = MorganFingerprintProfile(
+    radius=2,
+    fp_size=2048,
+    include_chirality=False,
+)
+
+result = encode_fingerprints(
+    ["CCO", "not-a-smiles", "c1ccccc1", "CCO"],
+    profile,
+)
+
+print(result.fingerprints.shape)
+# (3, 2048)
+
+print(result.valid_indices)
+# (0, 2, 3)
+
+for status in result.input_statuses:
+    print(status)
+```
+
+The fingerprint matrix:
+
+- contains one row per valid input;
+- has shape `(N_valid, fp_size)`;
+- uses the `numpy.uint8` dtype;
+- preserves the order and duplicates of valid inputs;
+- does not contain artificial zero-vector rows for invalid inputs.
+
+The encoder performs no file I/O. MOLRAPTOR parses each supplied SMILES with
+RDKit to construct the molecular graph required for fingerprint calculation,
+but it does not output a canonicalized or alternative SMILES representation.
+
+## Output Contract
+
+A successful file workflow writes exactly:
+
+```text
+artifacts/
+|-- fingerprints.npy
+|-- fingerprints.csv
+|-- input_statuses.csv
+`-- encoding_metadata.json
+```
+
+### `fingerprints.npy`
+
+Binary Morgan fingerprint matrix stored as a NumPy array.
+
+| Property | Value |
+|----------|-------|
+| Shape | `(N_valid, fp_size)` |
+| Dtype | `numpy.uint8` |
+| Rows | Valid inputs only |
+| Values | Binary `0` or `1` |
+
+### `fingerprints.csv`
+
+The same binary fingerprint matrix in CSV form. Its row order is identical to
+`fingerprints.npy` and follows `fingerprint_index`.
+
+### `input_statuses.csv`
+
+One record is written for every original input.
+
+```text
+input_index
+input_smiles
+status
+fingerprint_index
+invalid_reason
+```
+
+| Column | Meaning |
+|--------|---------|
+| `input_index` | Zero-based position in the original input sequence |
+| `input_smiles` | Exact string supplied to MOLRAPTOR |
+| `status` | `valid` or `invalid` |
+| `fingerprint_index` | Corresponding matrix row for a valid input |
+| `invalid_reason` | Stable reason for an invalid input |
+
+`input_index` and `fingerprint_index` are intentionally different:
+
+- `input_index` refers to every original record, including invalid inputs;
+- `fingerprint_index` refers only to rows in the valid fingerprint matrix.
+
+For example, if input index 1 is invalid, input index 2 may map to fingerprint
+index 1.
+
+Current invalid reasons are:
+
+- `parse_failure`: RDKit could not parse the supplied string;
+- `empty_molecule`: parsing produced a molecule with zero atoms.
+
+### `encoding_metadata.json`
+
+The metadata file records execution-level provenance:
+
+- `source_file_name`;
+- `input_format`;
+- `smiles_column`;
+- `input_count`;
+- `profile`;
+- `valid_indices`;
+- `valid_count`;
+- `invalid_count`;
+- `matrix_shape`;
+- `matrix_dtype`;
+- `molraptor_version`;
+- `rdkit_version`;
+- `ordered_input_hash`;
+- `profile_hash`.
+
+For TXT input, `smiles_column` is `null`.
+
+The metadata stores the source filename but not its local filesystem path. It
+does not duplicate the row-level records from `input_statuses.csv`.
+
+## Failure Isolation
+
+MOLRAPTOR separates row-level invalid inputs from global workflow failures.
+
+An invalid individual SMILES:
+
+- receives an entry in `input_statuses.csv`;
+- does not produce a fingerprint matrix row;
+- does not prevent valid inputs from being encoded.
+
+The file workflow stops without publishing final artifacts when:
+
+- the configuration is invalid;
+- the input file is inaccessible or uses an unsupported format;
+- the configured CSV SMILES column is missing;
+- no valid SMILES remain;
+- an output artifact cannot be written.
+
+The in-memory encoder may return an empty `(0, fp_size)` matrix. The
+zero-valid-input rule is enforced by the file workflow because a persisted
+fingerprint dataset with no valid rows is not considered a successful run.
+
+## Reproducibility
+
+Every encoding result records:
+
+| Field | Purpose |
+|-------|---------|
+| `ordered_input_hash` | SHA-256 digest of the exact ordered input strings |
+| `profile_hash` | SHA-256 digest of the complete effective Morgan profile |
+| `molraptor_version` | MOLRAPTOR version used for encoding |
+| `rdkit_version` | RDKit version used for parsing and fingerprinting |
+| `matrix_shape` | Number of valid rows and fingerprint width |
+| `matrix_dtype` | Persisted fingerprint matrix dtype |
+
+The ordered-input hash includes order, duplicates, whitespace, and empty
+strings. The profile hash covers all effective fingerprint settings, including
+defaults.
