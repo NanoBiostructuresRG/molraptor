@@ -1,5 +1,11 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
-"""File workflow for encoding SMILES and writing traceable artifacts."""
+"""CSV/TXT workflow for encoding SMILES and writing traceable artifacts.
+
+The workflow reads user-provided SMILES without curation, harmonization,
+canonicalization, or replacement. It delegates all molecule parsing,
+fingerprint calculation, status generation, and hashing to
+:func:`molraptor.morgan.encode_fingerprints`.
+"""
 
 from __future__ import annotations
 
@@ -47,6 +53,8 @@ def _read_csv_smiles(path: Path, smiles_column: str) -> list[str]:
 
 
 def _remove_line_ending(line: str) -> str:
+    """Remove one trailing CRLF, CR, or LF without changing other characters."""
+
     if line.endswith("\r\n"):
         return line[:-2]
     if line.endswith(("\r", "\n")):
@@ -125,13 +133,47 @@ def _write_outputs(
 
 
 class FingerprintStep:
-    """Run one configured CSV/TXT-to-Morgan-fingerprint workflow."""
+    """Execute one configured CSV/TXT fingerprint workflow.
+
+    Parameters
+    ----------
+    config : MolraptorConfig
+        Source, destination, and Morgan profile for the execution.
+
+    Attributes
+    ----------
+    config : MolraptorConfig
+        Immutable workflow configuration.
+    """
 
     def __init__(self, config: MolraptorConfig) -> None:
         self.config = config
 
     def run(self) -> FingerprintEncodingResult:
-        """Read, encode, validate, and persist one ordered SMILES batch."""
+        """Read, encode, validate, and persist one ordered SMILES batch.
+
+        Returns
+        -------
+        FingerprintEncodingResult
+            The result supplying persisted matrix content, row statuses,
+            scientific metadata, hashes, and runtime provenance. Source file
+            name, input format, and configured CSV column come from
+            :class:`MolraptorConfig`.
+
+        Raises
+        ------
+        ValueError
+            If input validation fails or the batch contains zero valid SMILES.
+        OSError
+            If output artifacts cannot be written.
+
+        Notes
+        -----
+        Invalid individual inputs remain in ``input_statuses.csv`` while valid
+        fingerprints retain their original ordering. A successful run writes
+        ``fingerprints.npy``, ``fingerprints.csv``, ``input_statuses.csv``, and
+        ``encoding_metadata.json``.
+        """
 
         smiles = _read_smiles(
             self.config.input_path,

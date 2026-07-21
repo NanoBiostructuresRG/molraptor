@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
-"""Command-line interface for MOLRAPTOR."""
+"""Command-line entry point for the CSV/TXT fingerprint workflow."""
 
 from __future__ import annotations
 
@@ -79,7 +79,25 @@ def _run(args: argparse.Namespace) -> None:
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    """Parse command-line arguments and execute the selected command."""
+    """Parse command-line arguments and execute the file workflow.
+
+    Parameters
+    ----------
+    argv : sequence of str or None, optional
+        Arguments to parse without the executable name. If ``None``, arguments
+        are read from :data:`sys.argv` by :mod:`argparse`.
+
+    Raises
+    ------
+    SystemExit
+        If argument parsing fails or workflow validation reports a global
+        failure.
+
+    Notes
+    -----
+    The ``run`` command delegates to the same file workflow and in-memory
+    encoder exposed by the Python API.
+    """
 
     parser = _build_parser()
     args = parser.parse_args(argv)

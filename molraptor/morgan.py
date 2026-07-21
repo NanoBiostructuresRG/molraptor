@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
-"""Public, in-memory Morgan fingerprint encoding API."""
+"""In-memory Morgan fingerprint encoding for user-provided SMILES."""
 
 from __future__ import annotations
 
@@ -21,12 +21,35 @@ SerializedProfile = dict[str, str | int | bool]
 
 
 class MorganFingerprintProfile(BaseModel):
-    """Complete, serializable settings for a Morgan bit fingerprint.
+    """Settings for a binary Morgan fingerprint calculation.
 
-    All effective defaults are model fields, so regular Pydantic serialization
-    retains them even when the caller constructs the profile with no arguments.
-    The invariant policy is explicit and intentionally limited to RDKit's
-    built-in Morgan atom and bond invariants in this schema version.
+    Attributes
+    ----------
+    profile_schema_version : {"1.0"}
+        Version of the serialized profile schema.
+    algorithm : {"morgan"}
+        Fingerprint algorithm identifier.
+    output_type : {"binary-bit-vector"}
+        Representation produced by the encoder.
+    radius : int
+        Morgan neighborhood radius. Must be non-negative.
+    fp_size : int
+        Number of bits in each fingerprint. Must be positive.
+    include_chirality : bool
+        Whether the Morgan generator includes chirality information.
+    use_bond_types : bool
+        Whether bond types contribute to the fingerprint.
+    include_ring_membership : bool
+        Whether ring membership contributes to atom invariants.
+    include_redundant_environments : bool
+        Whether redundant atom environments are included.
+    invariant_policy : {"rdkit-default"}
+        Atom and bond invariant policy used by the encoder.
+
+    Notes
+    -----
+    The model is frozen and rejects unknown settings. All effective defaults
+    are fields, so serialization records the complete calculation profile.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -43,13 +66,41 @@ class MorganFingerprintProfile(BaseModel):
     invariant_policy: Literal["rdkit-default"] = "rdkit-default"
 
     def serialize(self) -> SerializedProfile:
-        """Return the complete effective profile as JSON-compatible values."""
+        """Serialize the complete effective profile.
+
+        Returns
+        -------
+        dict
+            JSON-compatible profile values, including effective defaults.
+        """
 
         return self.model_dump(mode="json")
 
 
 class FingerprintInputStatus(BaseModel):
-    """Encoding status and row alignment for one original SMILES input."""
+    """Encoding status and alignment for one original SMILES input.
+
+    Attributes
+    ----------
+    input_index : int
+        Zero-based position in the original ordered input sequence.
+    input_smiles : str
+        Exact input string supplied by the caller.
+    status : {"valid", "invalid"}
+        Whether RDKit produced a non-empty molecule and a fingerprint row.
+    fingerprint_index : int or None
+        Zero-based row in the valid fingerprint matrix. This is ``None`` for
+        invalid inputs.
+    invalid_reason : {"parse_failure", "empty_molecule"} or None
+        Stable failure reason for an invalid input. This is ``None`` for a
+        valid input.
+
+    Notes
+    -----
+    ``input_index`` aligns statuses with original inputs, while
+    ``fingerprint_index`` aligns valid statuses with matrix rows. No derived
+    or alternative SMILES representation is stored.
+    """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -81,14 +132,55 @@ class FingerprintInputStatus(BaseModel):
 
     @property
     def original_index(self) -> int:
-        """Alias emphasizing that ``input_index`` refers to the caller's input."""
+        """Return the original input position.
+
+        Returns
+        -------
+        int
+            The same zero-based position as :attr:`input_index`.
+        """
 
         return self.input_index
 
 
 @dataclass(frozen=True, slots=True)
 class FingerprintEncodingResult:
-    """In-memory fingerprints plus reproducibility and alignment metadata."""
+    """Fingerprints with alignment and reproducibility metadata.
+
+    Attributes
+    ----------
+    fingerprints : numpy.ndarray
+        Binary matrix with shape ``(N_valid, fp_size)`` and dtype
+        ``numpy.uint8``.
+    profile : dict
+        Complete effective fingerprint profile.
+    valid_indices : tuple of int
+        Original input positions represented by matrix rows, in row order.
+    input_statuses : tuple of FingerprintInputStatus
+        One status record for every original input.
+    valid_count : int
+        Number of valid inputs and fingerprint matrix rows.
+    invalid_count : int
+        Number of inputs that did not produce fingerprint rows.
+    matrix_shape : tuple of int
+        Shape of ``fingerprints`` as ``(N_valid, fp_size)``.
+    matrix_dtype : str
+        String representation of the matrix dtype, currently ``"uint8"``.
+    molraptor_version : str
+        MOLRAPTOR version used for the calculation.
+    rdkit_version : str
+        RDKit version used for parsing and fingerprint generation.
+    ordered_input_hash : str
+        SHA-256 digest of the exact ordered input strings.
+    profile_hash : str
+        SHA-256 digest of the effective serialized profile.
+
+    Notes
+    -----
+    Invalid inputs are excluded from ``fingerprints`` but retained in
+    ``input_statuses``. Original order and duplicates are preserved for all
+    valid matrix rows.
+    """
 
     fingerprints: np.ndarray
     profile: SerializedProfile
@@ -105,18 +197,38 @@ class FingerprintEncodingResult:
 
     @property
     def effective_profile(self) -> SerializedProfile:
-        """Alias for the effective serialized profile used for encoding."""
+        """Return the effective profile used for encoding.
+
+        Returns
+        -------
+        dict
+            Alias of :attr:`profile`.
+        """
 
         return self.profile
 
     @property
     def input_hash(self) -> str:
-        """Short alias for :attr:`ordered_input_hash`."""
+        """Return the ordered-input digest.
+
+        Returns
+        -------
+        str
+            Alias of :attr:`ordered_input_hash`.
+        """
 
         return self.ordered_input_hash
 
     def serialize_metadata(self) -> dict[str, object]:
-        """Return JSON-compatible result metadata without the NumPy matrix."""
+        """Serialize encoding metadata without row-level statuses or bits.
+
+        Returns
+        -------
+        dict
+            JSON-compatible profile, alignment, counts, matrix properties,
+            hashes, and runtime versions. The NumPy matrix and per-input
+            statuses are excluded.
+        """
 
         return {
             "profile": dict(self.profile),
@@ -146,11 +258,48 @@ def encode_fingerprints(
     smiles: Sequence[str],
     profile: MorganFingerprintProfile,
 ) -> FingerprintEncodingResult:
-    """Encode an ordered sequence of SMILES as binary Morgan fingerprints.
+    """Encode ordered SMILES as binary Morgan fingerprints.
 
-    Invalid and empty SMILES are represented only in ``input_statuses``; they
-    do not add rows to the fingerprint matrix. This function performs no file
-    I/O and does not depend on pipeline configuration or labels.
+    Parameters
+    ----------
+    smiles : sequence of str
+        User-provided SMILES in the exact order to encode. A single string is
+        not accepted as a sequence argument.
+    profile : MorganFingerprintProfile
+        Complete Morgan generator settings.
+
+    Returns
+    -------
+    FingerprintEncodingResult
+        Valid fingerprints and per-input alignment metadata. The matrix has
+        shape ``(N_valid, profile.fp_size)`` and dtype ``numpy.uint8``.
+
+    Raises
+    ------
+    TypeError
+        If ``smiles`` is a string, is not an ordered sequence, contains a
+        non-string item, or if ``profile`` is not a
+        :class:`MorganFingerprintProfile`.
+
+    Notes
+    -----
+    Each exact input string is passed to RDKit to construct the molecule used
+    by the Morgan generator. MOLRAPTOR does not fetch, curate, harmonize,
+    canonicalize, or replace the supplied strings. Invalid and empty inputs
+    receive status records but no matrix rows; valid inputs continue to be
+    encoded in original order, including duplicates.
+
+    ``ordered_input_hash`` is computed from the exact ordered input strings.
+    ``profile_hash`` is computed from the complete effective profile.
+
+    Examples
+    --------
+    >>> profile = MorganFingerprintProfile(radius=2, fp_size=128)
+    >>> result = encode_fingerprints(["CCO", "invalid", "CCO"], profile)
+    >>> result.fingerprints.shape
+    (2, 128)
+    >>> result.valid_indices
+    (0, 2)
     """
 
     if isinstance(smiles, (str, bytes)):
