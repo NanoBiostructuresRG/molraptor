@@ -3,10 +3,10 @@
 
 This module is the single source of truth for the project version.
 It is read by ``hatchling`` at build time via ``[tool.hatch.version]``
-and imported by ``result_manager`` to stamp generated reports.
+and exposed through the public package API as ``__version__``.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 PROJECT_NAME = "MOLRAPTOR"
 PROJECT_VERSION = __version__
