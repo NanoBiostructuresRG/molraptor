@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
-"""Public API for in-memory and file-based Morgan fingerprint encoding.
+"""Public API for in-memory and file-based molecular fingerprint encoding.
 
 MOLRAPTOR accepts user-provided SMILES and exposes an in-memory encoder plus a
 single CSV/TXT file workflow. The package does not fetch, curate, harmonize,
@@ -10,7 +10,7 @@ from .version import __version__
 from .config import MolraptorConfig
 from .pipeline import run, validate_config
 from .validators import DataValidator
-from .morgan import (
+from .fingerprints import (
     FingerprintEncodingResult,
     FingerprintInputStatus,
     MorganFingerprintProfile,

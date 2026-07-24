@@ -4,44 +4,44 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
-from .morgan import MorganFingerprintProfile
+from .fingerprints import FingerprintType, MorganFingerprintProfile
 
 
 class MolraptorConfig(BaseModel):
-    """Inputs and outputs for one file-based fingerprint execution.
-
-    Attributes
-    ----------
-    input_path : pathlib.Path
-        Path to a user-provided ``.csv`` or UTF-8 ``.txt`` input file.
-    smiles_column : str
-        CSV column containing SMILES. The default is ``"SMILES"``. This value
-        is ignored for TXT inputs, which contain one SMILES per line.
-    output_dir : pathlib.Path
-        Directory for the four workflow artifacts. The default is
-        ``artifacts``.
-    profile : MorganFingerprintProfile
-        Effective Morgan settings. The default profile uses radius 2 and 2048
-        bits.
-
-    Notes
-    -----
-    The model is frozen and rejects unknown fields. Path values have ``~``
-    expanded during validation; input reading occurs when :func:`molraptor.run`
-    executes.
-    """
+    """Inputs and outputs for one file-based fingerprint execution."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     input_path: Path
     smiles_column: str = "SMILES"
     output_dir: Path = Path("artifacts")
-    profile: MorganFingerprintProfile = Field(
-        default_factory=MorganFingerprintProfile
-    )
+    fingerprint_type: FingerprintType = "morgan"
+    profile: MorganFingerprintProfile | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _apply_profile_default(cls, value: Any) -> Any:
+        if not isinstance(value, dict):
+            return value
+        data = dict(value)
+        fingerprint_type = data.get("fingerprint_type", "morgan")
+        if "profile" not in data and fingerprint_type == "morgan":
+            data["profile"] = MorganFingerprintProfile()
+        return data
+
+    @model_validator(mode="after")
+    def _validate_profile_scope(self) -> "MolraptorConfig":
+        if self.fingerprint_type == "morgan" and self.profile is None:
+            raise ValueError("Morgan fingerprint execution requires a profile")
+        if self.fingerprint_type != "morgan" and self.profile is not None:
+            raise ValueError(
+                "MorganFingerprintProfile is only valid with fingerprint_type='morgan'"
+            )
+        return self
 
     @field_validator("input_path", "output_dir", mode="before")
     @classmethod

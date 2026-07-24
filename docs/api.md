@@ -117,19 +117,19 @@ publish final artifacts. This policy belongs to `run`, not to
 
 ### MorganFingerprintProfile
 
-::: molraptor.morgan.MorganFingerprintProfile
+::: molraptor.fingerprints.MorganFingerprintProfile
 
 ### encode_fingerprints
 
-::: molraptor.morgan.encode_fingerprints
+::: molraptor.fingerprints.encode_fingerprints
 
 ### FingerprintEncodingResult
 
-::: molraptor.morgan.FingerprintEncodingResult
+::: molraptor.fingerprints.FingerprintEncodingResult
 
 ### FingerprintInputStatus
 
-::: molraptor.morgan.FingerprintInputStatus
+::: molraptor.fingerprints.FingerprintInputStatus
 
 ---
 

@@ -4,7 +4,7 @@
 The workflow reads user-provided SMILES without curation, harmonization,
 canonicalization, or replacement. It delegates all molecule parsing,
 fingerprint calculation, status generation, and hashing to
-:func:`molraptor.morgan.encode_fingerprints`.
+:func:`molraptor.fingerprints.encode_fingerprints`.
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 
 from .config import MolraptorConfig
-from .morgan import FingerprintEncodingResult, encode_fingerprints
+from .fingerprints import FingerprintEncodingResult, encode_fingerprints
 
 
 OUTPUT_FILENAMES = (
@@ -138,7 +138,7 @@ class FingerprintStep:
     Parameters
     ----------
     config : MolraptorConfig
-        Source, destination, and Morgan profile for the execution.
+        Source, destination, fingerprint type, and effective profile.
 
     Attributes
     ----------
@@ -179,7 +179,11 @@ class FingerprintStep:
             self.config.input_path,
             self.config.smiles_column,
         )
-        result = encode_fingerprints(smiles, self.config.profile)
+        result = encode_fingerprints(
+            smiles,
+            self.config.profile,
+            fingerprint_type=self.config.fingerprint_type,
+        )
         if result.valid_count == 0:
             raise ValueError("Input contains zero valid SMILES")
 

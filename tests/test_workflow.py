@@ -13,7 +13,7 @@ from pydantic import ValidationError
 
 from molraptor import MorganFingerprintProfile, encode_fingerprints
 from molraptor.config import MolraptorConfig
-from molraptor.fingerprint import FingerprintStep, OUTPUT_FILENAMES
+from molraptor.workflow import FingerprintStep, OUTPUT_FILENAMES
 
 
 def _config(
@@ -22,12 +22,19 @@ def _config(
     *,
     smiles_column: str = "SMILES",
     profile: MorganFingerprintProfile | None = None,
+    fingerprint_type: str = "morgan",
 ) -> MolraptorConfig:
+    effective_profile = (
+        profile or MorganFingerprintProfile(fp_size=64)
+        if fingerprint_type == "morgan"
+        else None
+    )
     return MolraptorConfig(
         input_path=input_path,
         smiles_column=smiles_column,
         output_dir=output_dir,
-        profile=profile or MorganFingerprintProfile(fp_size=64),
+        fingerprint_type=fingerprint_type,
+        profile=effective_profile,
     )
 
 
@@ -266,3 +273,26 @@ def test_invalid_profile_is_rejected_before_outputs(tmp_path, profile_kwargs):
         MorganFingerprintProfile(**profile_kwargs)
 
     _assert_no_artifacts(output_dir)
+
+
+def test_non_morgan_workflow_preserves_artifacts_and_records_profile(tmp_path):
+    input_path = tmp_path / "molecules.txt"
+    input_path.write_text("CCO\ninvalid\nCC\n", encoding="utf-8")
+    output_dir = tmp_path / "outputs"
+
+    result = FingerprintStep(
+        _config(
+            input_path,
+            output_dir,
+            fingerprint_type="maccs",
+        )
+    ).run()
+
+    assert result.fingerprints.shape == (2, 167)
+    assert {path.name for path in output_dir.iterdir()} == set(OUTPUT_FILENAMES)
+    metadata = json.loads(
+        (output_dir / "encoding_metadata.json").read_text("utf-8")
+    )
+    assert metadata["profile"]["algorithm"] == "maccs"
+    assert metadata["profile"]["fp_size"] == 167
+    assert metadata["matrix_shape"] == [2, 167]

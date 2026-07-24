@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 from .config import MolraptorConfig
-from .fingerprint import FingerprintStep
-from .morgan import FingerprintEncodingResult
+from .workflow import FingerprintStep
+from .fingerprints import FingerprintEncodingResult
 
 
 def validate_config(config: MolraptorConfig) -> MolraptorConfig:
@@ -38,7 +38,7 @@ def run(config: MolraptorConfig) -> FingerprintEncodingResult:
     Parameters
     ----------
     config : MolraptorConfig
-        Input file, output directory, CSV column, and Morgan profile.
+        Input file, output directory, CSV column, and fingerprint settings.
 
     Returns
     -------
