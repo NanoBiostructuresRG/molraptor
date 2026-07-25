@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 type: software
-title: "MOLRAPTOR: Molecular Learning via Rapid Processing of Topological Representations"
+title: "MOLRAPTOR: Molecular Fingerprint Rapid Generator"
 version: "0.3.0"
 date-released: "2026-07-20"
 authors:
@@ -13,12 +13,14 @@ repository-code: "https://github.com/NanoBiostructuresRG/molraptor"
 license: "LGPL-3.0-or-later"
 abstract: >-
   MOLRAPTOR is a SMILES-first scientific library and command-line tool for
-  generating reproducible binary Morgan fingerprints from user-provided
-  molecular representations. It supports in-memory encoding and CSV/TXT
-  workflows, preserves input order and duplicates, isolates invalid records,
-  and records deterministic input and profile hashes with runtime metadata.
-  MOLRAPTOR parses supplied SMILES with RDKit but does not retrieve, curate,
-  harmonize, canonicalize, or replace them.
+  generating reproducible binary molecular fingerprints from user-provided
+  molecular representations. It supports Morgan, Feature Morgan, Atom Pair,
+  RDKit topological, Topological Torsion, Layered, and MACCS fingerprints
+  through in-memory encoding and CSV/TXT workflows. It preserves input order
+  and duplicates, isolates invalid records, and records deterministic input
+  and profile hashes with runtime metadata. MOLRAPTOR parses supplied SMILES
+  with RDKit but does not retrieve, curate, harmonize, canonicalize, or replace
+  them.
 keywords:
   - cheminformatics
   - molecular fingerprints

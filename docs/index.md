@@ -13,7 +13,7 @@
     </div>
     <p class="ms-subtitle">
       Scientific library and command-line tool for generating reproducible
-      Morgan fingerprints from user-provided molecular representations.
+      binary molecular fingerprints from user-provided molecular representations.
     </p>
     <div class="ms-actions">
       <a class="md-button md-button--primary" href="usage/#installation">Install</a>
@@ -21,7 +21,7 @@
       <a class="md-button" href="changelog/">Changelog</a>
     </div>
     <div class="ms-badges" aria-label="Project badges">
-      <a href="https://github.com/NanoBiostructuresRG/molrapto/actions/workflows/ci.yml"><img src="https://github.com/NanoBiostructuresRG/molraptor/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+      <a href="https://github.com/NanoBiostructuresRG/molraptor/actions/workflows/ci.yml"><img src="https://github.com/NanoBiostructuresRG/molraptor/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
       <a href="https://pypi.org/project/molraptor/"><img src="https://img.shields.io/pypi/v/molraptor.svg" alt="PyPI"></a>
       <a href="https://pypi.org/project/molraptor/"><img src="https://img.shields.io/pypi/pyversions/molraptor.svg" alt="Python versions"></a>
       <a href="https://github.com/NanoBiostructuresRG/molraptor/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-LGPL_v3%2B-blue.svg" alt="License: LGPL v3+"></a>
@@ -49,8 +49,8 @@
     </div>
     <div class="ms-flow__item">
       <span class="ms-flow__kicker">Encode</span>
-      <strong>Morgan</strong>
-      <small>binary bit vectors</small>
+      <strong>Fingerprint</strong>
+      <small>selected binary bit vectors</small>
     </div>
     <div class="ms-flow__item">
       <span class="ms-flow__kicker">Trace</span>
@@ -76,8 +76,8 @@
     <article class="ms-card">
       <span class="ms-card__icon">02</span>
       <h3>Encode</h3>
-      <p>Generate binary Morgan fingerprints using an explicit,
-      serializable RDKit profile.</p>
+      <p>Generate the selected binary molecular fingerprint using a
+      serializable effective profile.</p>
     </article>
     <article class="ms-card">
       <span class="ms-card__icon">03</span>
@@ -100,10 +100,10 @@
 |----------------|-------------------|
 | Accept user-provided SMILES through Python, CSV, or TXT. | Retrieve molecular records from PubChem or other databases. |
 | Parse SMILES with RDKit for fingerprint calculation. | Curate, harmonize, canonicalize, or replace supplied SMILES. |
-| Generate binary Morgan fingerprints. | Generate labels or activity classes. |
+| Generate supported binary molecular fingerprints. | Generate labels or activity classes. |
+| Record profiles, hashes, versions, and row alignment. | Select or recommend a scientifically preferred fingerprint. |
 | Preserve input order and duplicates. | Train or evaluate machine-learning models. |
 | Isolate invalid individual inputs. | Calculate molecular descriptors or 3D conformations. |
-| Record profiles, hashes, versions, and row alignment. | Provide alternative fingerprint algorithms in v0.3.0. |
 
 ## Quick Example
 
@@ -113,6 +113,7 @@ python -m pip install molraptor
 molraptor run \
   --input molecules.csv \
   --smiles-column SMILES \
+  --fingerprint maccs \
   --output-dir artifacts
 ```
 
@@ -130,6 +131,9 @@ print(result.fingerprints.shape)
 # (2, 2048)
 ```
 
+Morgan is the default fingerprint and supports configurable settings. Other
+fingerprint types use their fixed effective profiles.
+
 The in-memory API, file workflow, and command-line interface use the same
 scientific encoding core.
 
@@ -144,7 +148,7 @@ scientific encoding core.
 ## Citation
 
 ```text
-Contreras-Torres, F. F. (2026). MOLRAPTOR: Molecular Learning via Rapid Processing of Topological Representations. Zenodo. https://doi.org/10.5281/zenodo.20434420
+Contreras-Torres, F. F. (2026). MOLRAPTOR: Molecular Fingerprint Rapid Generator. Zenodo. https://doi.org/10.5281/zenodo.20434420
 ```
 
 ## License
