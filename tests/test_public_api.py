@@ -33,16 +33,24 @@ def test_data_validator_importable():
 
 def test_morgan_fingerprint_api_importable():
     from molraptor import (
+        FINGERPRINT_TYPES,
         FingerprintEncodingResult,
         FingerprintInputStatus,
+        FingerprintType,
         MorganFingerprintProfile,
+        ResolvedFingerprintProfile,
         encode_fingerprints,
+        resolve_fingerprint_profile,
     )
 
+    assert FingerprintType is not None
+    assert len(FINGERPRINT_TYPES) == 7
     assert FingerprintEncodingResult is not None
     assert FingerprintInputStatus is not None
     assert MorganFingerprintProfile is not None
+    assert ResolvedFingerprintProfile is not None
     assert callable(encode_fingerprints)
+    assert callable(resolve_fingerprint_profile)
 
 
 def test_dunder_all_contains_expected_symbols():
@@ -52,9 +60,13 @@ def test_dunder_all_contains_expected_symbols():
         "run",
         "validate_config",
         "DataValidator",
+        "FingerprintType",
+        "FINGERPRINT_TYPES",
         "MorganFingerprintProfile",
+        "ResolvedFingerprintProfile",
         "FingerprintEncodingResult",
         "FingerprintInputStatus",
+        "resolve_fingerprint_profile",
         "encode_fingerprints",
     }
     assert set(molraptor.__all__) == expected

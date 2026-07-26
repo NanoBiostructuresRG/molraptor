@@ -1,6 +1,6 @@
 # API Reference
 
-MOLRAPTOR exposes nine public symbols through `molraptor.__all__`. The project
+MOLRAPTOR exposes thirteen public symbols through `molraptor.__all__`. The project
 is pre-stable, so this API may change before 1.0. Objects not listed here are
 implementation details and are not part of the supported public contract.
 
@@ -9,9 +9,13 @@ from molraptor import MolraptorConfig
 from molraptor import validate_config
 from molraptor import run
 from molraptor import DataValidator
+from molraptor import FingerprintType
+from molraptor import FINGERPRINT_TYPES
 from molraptor import MorganFingerprintProfile
+from molraptor import ResolvedFingerprintProfile
 from molraptor import FingerprintEncodingResult
 from molraptor import FingerprintInputStatus
+from molraptor import resolve_fingerprint_profile
 from molraptor import encode_fingerprints
 from molraptor import __version__
 ```
@@ -83,6 +87,29 @@ maccs
 
 Morgan uses a configurable effective profile. The other fingerprint types use
 fixed effective profiles.
+
+### Resolve a profile before encoding
+
+Use `resolve_fingerprint_profile` to inspect the complete effective profile as
+a read-only mapping, fingerprint width, and canonical profile hash without
+parsing or encoding SMILES:
+
+```python
+from molraptor import resolve_fingerprint_profile
+
+resolved = resolve_fingerprint_profile("maccs")
+
+print(resolved.fp_size)
+# 167
+
+print(resolved.profile["algorithm"])
+# maccs
+
+print(resolved.profile_hash)
+```
+
+Pass a `MorganFingerprintProfile` as the second argument only when resolving
+the `"morgan"` fingerprint type.
 
 `encode_fingerprints`:
 
@@ -175,6 +202,14 @@ publish final artifacts. This policy belongs to `run`, not to
 ### MorganFingerprintProfile
 
 ::: molraptor.fingerprints.MorganFingerprintProfile
+
+### ResolvedFingerprintProfile
+
+::: molraptor.fingerprints.ResolvedFingerprintProfile
+
+### resolve_fingerprint_profile
+
+::: molraptor.fingerprints.resolve_fingerprint_profile
 
 ### encode_fingerprints
 

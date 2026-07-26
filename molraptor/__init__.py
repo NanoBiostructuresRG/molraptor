@@ -11,10 +11,14 @@ from .config import MolraptorConfig
 from .pipeline import run, validate_config
 from .validators import DataValidator
 from .fingerprints import (
+    FINGERPRINT_TYPES,
     FingerprintEncodingResult,
     FingerprintInputStatus,
+    FingerprintType,
     MorganFingerprintProfile,
+    ResolvedFingerprintProfile,
     encode_fingerprints,
+    resolve_fingerprint_profile,
 )
 
 __all__ = [
@@ -23,8 +27,12 @@ __all__ = [
     "run",
     "validate_config",
     "DataValidator",
+    "FingerprintType",
+    "FINGERPRINT_TYPES",
     "MorganFingerprintProfile",
+    "ResolvedFingerprintProfile",
     "FingerprintEncodingResult",
     "FingerprintInputStatus",
+    "resolve_fingerprint_profile",
     "encode_fingerprints",
 ]
