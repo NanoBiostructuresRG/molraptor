@@ -6,7 +6,7 @@ It is read by ``hatchling`` at build time via ``[tool.hatch.version]``
 and exposed through the public package API as ``__version__``.
 """
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 PROJECT_NAME = "MOLRAPTOR"
 PROJECT_VERSION = __version__

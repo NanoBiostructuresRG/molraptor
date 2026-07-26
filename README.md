@@ -1,7 +1,7 @@
 # MOLRAPTOR: Molecular Fingerprint Rapid Generator
 
 
-[![Version](https://img.shields.io/badge/version-v0.3.0-blue.svg)](https://pypi.org/project/molraptor/)
+[![Version](https://img.shields.io/badge/version-v0.4.0-blue.svg)](https://pypi.org/project/molraptor/)
 [![PyPI](https://img.shields.io/pypi/v/molraptor.svg)](https://pypi.org/project/molraptor/)
 [![Python](https://img.shields.io/pypi/pyversions/molraptor.svg)](https://pypi.org/project/molraptor/)
 [![License: LGPL v3+](https://img.shields.io/badge/License-LGPL_v3%2B-blue.svg)](LICENSE)

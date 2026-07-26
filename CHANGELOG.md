@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0] - 2026-07-25
+
+### Added
+
+- Added unified support for Morgan, Feature Morgan, Atom Pair, RDKit
+  topological, Topological Torsion, Layered, and MACCS fingerprints.
+- Added fingerprint selection through the CLI `--fingerprint` option and
+  the Python `fingerprint_type` configuration.
+- Added fixed, serializable effective profiles for non-Morgan fingerprints
+  while preserving configurable Morgan settings.
+- Added focused coverage for fingerprint dispatch, profiles, CLI selection,
+  output dimensions, configuration validation, and removed module routes.
+
+### Changed
+
+- Replaced the Morgan-only scientific implementation with the unified
+  `molraptor/fingerprints.py` core.
+- Kept Morgan as the default fingerprint and preserved compatibility with
+  the existing positional `MorganFingerprintProfile` contract.
+- Renamed the CSV/TXT and artifact-writing implementation from
+  `fingerprint.py` to `workflow.py`.
+- Standardized one fingerprint type per execution with binary
+  `numpy.uint8` matrices and natural fingerprint widths.
+- Made Morgan-only CLI and configuration settings fail explicitly when
+  supplied for another fingerprint type.
+- Updated the project identity to
+  `MOLRAPTOR: Molecular Fingerprint Rapid Generator`.
+- Updated the README, API reference, usage guide, documentation homepage,
+  citation metadata, and package description for multi-fingerprint support.
+
+### Removed
+
+- Removed the historical `molraptor.morgan` module route.
+- Removed the historical `molraptor.fingerprint` module route.
+
 ## [0.3.0] - 2026-07-20
 
 ### Added
