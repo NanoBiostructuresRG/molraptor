@@ -49,9 +49,13 @@ jobs:
               'run',
               'validate_config',
               'DataValidator',
+              'FingerprintType',
+              'FINGERPRINT_TYPES',
               'MorganFingerprintProfile',
+              'ResolvedFingerprintProfile',
               'FingerprintEncodingResult',
               'FingerprintInputStatus',
+              'resolve_fingerprint_profile',
               'encode_fingerprints',
           ]
           assert set(molraptor.__all__) == set(expected), molraptor.__all__
