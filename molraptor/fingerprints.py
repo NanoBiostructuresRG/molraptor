@@ -170,6 +170,16 @@ class MorganFingerprintProfile(BaseModel):
         return self.model_dump(mode="json")
 
 
+@dataclass(frozen=True, slots=True)
+class ResolvedFingerprintProfile:
+    """Complete effective fingerprint profile and its derived metadata."""
+
+    fingerprint_type: FingerprintType
+    profile: Mapping[str, FingerprintParameterValue]
+    profile_hash: str
+    fp_size: int
+
+
 class FingerprintInputStatus(BaseModel):
     """Encoding status and alignment for one original SMILES input."""
 
@@ -273,35 +283,58 @@ def _fixed_profile(fingerprint_type: FingerprintType) -> SerializedProfile:
     }
 
 
-def _prepare_fingerprint(
-    fingerprint_type: FingerprintType,
-    profile: MorganFingerprintProfile | None,
-) -> tuple[SerializedProfile, int, Callable[[Chem.Mol], object]]:
-    if fingerprint_type == "morgan":
-        morgan_profile = profile or MorganFingerprintProfile()
-        generator = GetMorganGenerator(
-            radius=morgan_profile.radius,
-            fpSize=morgan_profile.fp_size,
-            includeChirality=morgan_profile.include_chirality,
-            useBondTypes=morgan_profile.use_bond_types,
-            includeRingMembership=morgan_profile.include_ring_membership,
-            includeRedundantEnvironments=(
-                morgan_profile.include_redundant_environments
-            ),
-        )
-        return (
-            morgan_profile.serialize(),
-            morgan_profile.fp_size,
-            generator.GetFingerprint,
-        )
+def resolve_fingerprint_profile(
+    fingerprint_type: FingerprintType = "morgan",
+    profile: MorganFingerprintProfile | None = None,
+) -> ResolvedFingerprintProfile:
+    """Resolve a complete effective fingerprint profile without encoding."""
 
-    if profile is not None:
+    if fingerprint_type not in FINGERPRINT_TYPES:
+        raise ValueError(f"Unsupported fingerprint type: {fingerprint_type}")
+    if profile is not None and not isinstance(profile, MorganFingerprintProfile):
+        raise TypeError("profile must be a MorganFingerprintProfile or None")
+    if fingerprint_type != "morgan" and profile is not None:
         raise ValueError(
             "MorganFingerprintProfile is only valid with fingerprint_type='morgan'"
         )
 
-    parameters = FINGERPRINT_PARAMETERS[fingerprint_type]
-    effective_profile = _fixed_profile(fingerprint_type)
+    if fingerprint_type == "morgan":
+        effective_profile = (profile or MorganFingerprintProfile()).serialize()
+    else:
+        effective_profile = _fixed_profile(fingerprint_type)
+
+    profile_hash = _sha256_json(effective_profile, sort_keys=True)
+    read_only_profile = MappingProxyType(dict(effective_profile))
+
+    return ResolvedFingerprintProfile(
+        fingerprint_type=fingerprint_type,
+        profile=read_only_profile,
+        profile_hash=profile_hash,
+        fp_size=cast(int, effective_profile["fp_size"]),
+    )
+
+
+def _prepare_fingerprint(
+    fingerprint_type: FingerprintType,
+    profile: MorganFingerprintProfile | None,
+) -> tuple[ResolvedFingerprintProfile, Callable[[Chem.Mol], object]]:
+    resolved = resolve_fingerprint_profile(fingerprint_type, profile)
+    parameters = resolved.profile
+
+    if fingerprint_type == "morgan":
+        generator = GetMorganGenerator(
+            radius=cast(int, parameters["radius"]),
+            fpSize=resolved.fp_size,
+            includeChirality=cast(bool, parameters["include_chirality"]),
+            useBondTypes=cast(bool, parameters["use_bond_types"]),
+            includeRingMembership=cast(
+                bool, parameters["include_ring_membership"]
+            ),
+            includeRedundantEnvironments=(
+                cast(bool, parameters["include_redundant_environments"])
+            ),
+        )
+        return resolved, generator.GetFingerprint
 
     if fingerprint_type == "featmorgan":
         generator = GetMorganGenerator(
@@ -317,7 +350,7 @@ def _prepare_fingerprint(
             ),
             atomInvariantsGenerator=GetMorganFeatureAtomInvGen(),
         )
-        return effective_profile, cast(int, parameters["fp_size"]), generator.GetFingerprint
+        return resolved, generator.GetFingerprint
 
     if fingerprint_type == "atompair":
         generator = GetAtomPairGenerator(
@@ -328,7 +361,7 @@ def _prepare_fingerprint(
             countSimulation=cast(bool, parameters["count_simulation"]),
             fpSize=cast(int, parameters["fp_size"]),
         )
-        return effective_profile, cast(int, parameters["fp_size"]), generator.GetFingerprint
+        return resolved, generator.GetFingerprint
 
     if fingerprint_type == "rdk":
         fp_size = cast(int, parameters["fp_size"])
@@ -345,7 +378,7 @@ def _prepare_fingerprint(
                 useBondOrder=cast(bool, parameters["use_bond_order"]),
             )
 
-        return effective_profile, fp_size, encode_rdk
+        return resolved, encode_rdk
 
     if fingerprint_type == "torsion":
         generator = GetTopologicalTorsionGenerator(
@@ -354,7 +387,7 @@ def _prepare_fingerprint(
             countSimulation=cast(bool, parameters["count_simulation"]),
             fpSize=cast(int, parameters["fp_size"]),
         )
-        return effective_profile, cast(int, parameters["fp_size"]), generator.GetFingerprint
+        return resolved, generator.GetFingerprint
 
     if fingerprint_type == "layered":
         fp_size = cast(int, parameters["fp_size"])
@@ -369,14 +402,10 @@ def _prepare_fingerprint(
                 branchedPaths=cast(bool, parameters["branched_paths"]),
             )
 
-        return effective_profile, fp_size, encode_layered
+        return resolved, encode_layered
 
     if fingerprint_type == "maccs":
-        return (
-            effective_profile,
-            cast(int, parameters["fp_size"]),
-            MACCSkeys.GenMACCSKeys,
-        )
+        return resolved, MACCSkeys.GenMACCSKeys
 
     raise AssertionError(f"Unhandled fingerprint type: {fingerprint_type}")
 
@@ -417,20 +446,16 @@ def encode_fingerprints(
         )
     if not isinstance(smiles, Sequence):
         raise TypeError("smiles must be an ordered sequence of strings")
-    if fingerprint_type not in FINGERPRINT_TYPES:
-        raise ValueError(f"Unsupported fingerprint type: {fingerprint_type}")
-    if profile is not None and not isinstance(profile, MorganFingerprintProfile):
-        raise TypeError("profile must be a MorganFingerprintProfile or None")
 
+    resolved_profile, encode_molecule = _prepare_fingerprint(
+        fingerprint_type,
+        profile,
+    )
     ordered_smiles = tuple(smiles)
     for index, value in enumerate(ordered_smiles):
         if not isinstance(value, str):
             raise TypeError(f"smiles[{index}] must be a string")
 
-    effective_profile, fp_size, encode_molecule = _prepare_fingerprint(
-        fingerprint_type,
-        profile,
-    )
     rows: list[np.ndarray] = []
     valid_indices: list[int] = []
     statuses: list[FingerprintInputStatus] = []
@@ -453,7 +478,7 @@ def encode_fingerprints(
             continue
 
         fingerprint = encode_molecule(molecule)
-        row = np.zeros(fp_size, dtype=np.uint8)
+        row = np.zeros(resolved_profile.fp_size, dtype=np.uint8)
         DataStructs.ConvertToNumpyArray(fingerprint, row)
         fingerprint_index = len(rows)
         rows.append(row)
@@ -470,11 +495,11 @@ def encode_fingerprints(
     if rows:
         matrix = np.vstack(rows).astype(np.uint8, copy=False)
     else:
-        matrix = np.empty((0, fp_size), dtype=np.uint8)
+        matrix = np.empty((0, resolved_profile.fp_size), dtype=np.uint8)
 
     return FingerprintEncodingResult(
         fingerprints=matrix,
-        profile=effective_profile,
+        profile=dict(resolved_profile.profile),
         valid_indices=tuple(valid_indices),
         input_statuses=tuple(statuses),
         valid_count=len(rows),
@@ -484,7 +509,7 @@ def encode_fingerprints(
         molraptor_version=__version__,
         rdkit_version=rdkit_version,
         ordered_input_hash=_sha256_json(ordered_smiles, sort_keys=False),
-        profile_hash=_sha256_json(effective_profile, sort_keys=True),
+        profile_hash=resolved_profile.profile_hash,
     )
 
 
@@ -493,7 +518,9 @@ __all__ = [
     "FINGERPRINT_TYPES",
     "FINGERPRINT_PARAMETERS",
     "MorganFingerprintProfile",
+    "ResolvedFingerprintProfile",
     "FingerprintEncodingResult",
     "FingerprintInputStatus",
+    "resolve_fingerprint_profile",
     "encode_fingerprints",
 ]
