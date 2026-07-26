@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 """Tests for molraptor public API."""
 
+import importlib.util
+
 import molraptor
 
 
@@ -60,3 +62,8 @@ def test_dunder_all_contains_expected_symbols():
 
 def test_file_workflow_class_not_in_dunder_all():
     assert "FingerprintStep" not in molraptor.__all__
+
+
+def test_legacy_scientific_modules_are_removed():
+    assert importlib.util.find_spec("molraptor.morgan") is None
+    assert importlib.util.find_spec("molraptor.fingerprint") is None

@@ -7,7 +7,7 @@ from typing import Iterable
 
 import pandas as pd
 
-from .morgan import MorganFingerprintProfile, encode_fingerprints
+from .fingerprints import _smiles_is_valid
 
 
 class DataValidator:
@@ -51,9 +51,8 @@ class DataValidator:
 
         Notes
         -----
-        Validation delegates to :func:`encode_fingerprints`; the supplied
+        Validation delegates to the shared RDKit parsing rule; the supplied
         string is not curated, harmonized, canonicalized, or replaced.
         """
 
-        result = encode_fingerprints([smiles], MorganFingerprintProfile())
-        return result.input_statuses[0].status == "valid"
+        return _smiles_is_valid(smiles)

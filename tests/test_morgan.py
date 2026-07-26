@@ -331,3 +331,21 @@ def test_encoding_performs_no_file_io(tmp_path, monkeypatch):
     )
 
     assert set(tmp_path.iterdir()) == before
+
+
+def test_default_generic_selection_preserves_existing_morgan_contract():
+    smiles = ["CCO", "invalid", "CC"]
+    profile = MorganFingerprintProfile(radius=3, fp_size=64)
+
+    legacy_call = encode_fingerprints(smiles, profile)
+    explicit_call = encode_fingerprints(
+        smiles,
+        profile,
+        fingerprint_type="morgan",
+    )
+
+    np.testing.assert_array_equal(
+        legacy_call.fingerprints,
+        explicit_call.fingerprints,
+    )
+    assert legacy_call.serialize_metadata() == explicit_call.serialize_metadata()

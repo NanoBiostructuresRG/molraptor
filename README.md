@@ -1,4 +1,4 @@
-# MOLRAPTOR: Molecular Learning via Rapid Processing of Topological Representations
+# MOLRAPTOR: Molecular Fingerprint Rapid Generator
 
 
 [![Version](https://img.shields.io/badge/version-v0.3.0-blue.svg)](https://pypi.org/project/molraptor/)
@@ -9,18 +9,19 @@
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-teal.svg)](https://nanobiostructuresrg.github.io/molraptor/)
 
 
-**MOLRAPTOR** is a SMILES-first scientific library and command-line tool for generating reproducible Morgan fingerprints from user-provided molecular representations.
+**MOLRAPTOR** is a SMILES-first scientific library and command-line tool for generating reproducible binary molecular fingerprints from user-provided molecular representations.
 
 MOLRAPTOR provides:
 
 - an in-memory Python API for direct SMILES encoding;
 - a command-line workflow for CSV and TXT inputs;
-- explicit and serializable Morgan fingerprint profiles;
+- Morgan, Feature Morgan, Atom Pair, RDKit topological, Topological Torsion, Layered, and MACCS fingerprints;
+- fixed and serializable effective profiles, with configurable Morgan settings;
 - deterministic input and profile hashes;
 - traceable handling of valid and invalid inputs;
 - NumPy and CSV fingerprint outputs.
 
-MOLRAPTOR does not retrieve, curate, harmonize, canonicalize, or replace supplied SMILES. Each input string is parsed by RDKit only to construct the molecular graph required for Morgan fingerprint calculation.
+MOLRAPTOR does not retrieve, curate, harmonize, canonicalize, or replace supplied SMILES. Each input string is parsed by RDKit only to construct the molecular graph required for the selected fingerprint calculation.
 
 ## Project Identity
 
@@ -33,7 +34,7 @@ License: LGPL-3.0-or-later
 Development status: alpha / pre-stable
 ```
 
-From Molraptor v0.3.0, it is introduced a SMILES-only workflow and replaces the legacy PubChem-oriented pipeline.
+MOLRAPTOR uses a SMILES-only workflow and does not include the legacy PubChem-oriented pipeline.
 
 ## Documentation
 
@@ -101,6 +102,31 @@ molraptor run \
   --output-dir artifacts
 ```
 
+### Fingerprint selection
+
+Morgan is the default fingerprint. Select another supported fingerprint with `--fingerprint`:
+
+```bash
+molraptor run \
+  --input molecules.csv \
+  --fingerprint maccs \
+  --output-dir artifacts
+```
+
+Supported values are:
+
+```text
+morgan
+featmorgan
+atompair
+rdk
+torsion
+layered
+maccs
+```
+
+Each execution calculates one fingerprint type.
+
 ### Morgan settings
 
 The default profile uses radius 2, 2048 bits, and chirality disabled.
@@ -150,6 +176,27 @@ print(result.valid_indices)
 for status in result.input_statuses:
     print(status)
 ```
+
+### Selecting another fingerprint
+
+Use the keyword-only `fingerprint_type` argument to select another supported fingerprint:
+
+```python
+from molraptor import encode_fingerprints
+
+result = encode_fingerprints(
+    ["CCO", "not-a-smiles", "c1ccccc1"],
+    fingerprint_type="maccs",
+)
+
+print(result.fingerprints.shape)
+# (2, 167)
+
+print(result.profile["algorithm"])
+# maccs
+```
+
+Morgan remains the default and accepts a configurable `MorganFingerprintProfile`. The other fingerprint types use their fixed effective profiles.
 
 The returned fingerprint matrix:
 
@@ -228,7 +275,7 @@ artifacts/
 
 ### `fingerprints.npy`
 
-Binary Morgan fingerprint matrix stored as a NumPy array.
+Binary fingerprint matrix for the selected fingerprint type, stored as a NumPy array.
 
 - shape: `(N_valid, fp_size)`
 - dtype: `numpy.uint8`
@@ -265,7 +312,7 @@ Encoding-level metadata containing:
 - source filename and input format;
 - configured CSV SMILES column, when applicable;
 - total, valid, and invalid input counts;
-- complete effective Morgan profile;
+- complete effective fingerprint profile;
 - matrix shape and dtype;
 - valid-input alignment;
 - MOLRAPTOR and RDKit versions;
@@ -325,17 +372,17 @@ Modules and objects not exported from `molraptor.__all__` are internal implement
 |---|---|
 | Accept user-provided SMILES from Python, CSV, or TXT. | Retrieve molecular records from PubChem or other databases. |
 | Parse SMILES with RDKit for fingerprint calculation. | Curate, harmonize, canonicalize, or replace SMILES. |
-| Generate binary Morgan fingerprints. | Generate labels or activity classes. |
+| Generate supported binary molecular fingerprints. | Generate labels or activity classes. |
+| Record profiles, hashes, versions, and row alignment. | Select or recommend a scientifically preferred fingerprint. |
 | Preserve order and duplicates. | Train or evaluate machine-learning models. |
 | Isolate invalid individual inputs. | Calculate molecular descriptors or 3D conformations. |
-| Record profiles, hashes, versions, and row alignment. | Provide alternative fingerprint algorithms in v0.3.0. |
 
 MOLRAPTOR uses a lightweight modular boundary:
 
 ```text
 Python API / CSV / TXT / CLI
               ↓
-     in-memory Morgan core
+     in-memory fingerprint core
               ↓
       NumPy / CSV / JSON
 ```
@@ -347,7 +394,7 @@ Input readers, workflow orchestration, and output writers depend on the scientif
 Each encoding result records:
 
 - `ordered_input_hash`: SHA-256 digest of the exact ordered input strings, including duplicates and empty strings;
-- `profile_hash`: SHA-256 digest of the complete effective Morgan profile;
+- `profile_hash`: SHA-256 digest of the complete effective fingerprint profile;
 - MOLRAPTOR version;
 - RDKit version;
 - fingerprint matrix shape and dtype.
@@ -384,7 +431,7 @@ If you use MOLRAPTOR in your research, please cite it using the metadata in
 [CITATION.cff](CITATION.cff).
 
 ```text
-Contreras-Torres, F. F. (2026). MOLRAPTOR: Molecular Learning via Rapid Processing of Topological Representations. Zenodo. https://doi.org/10.5281/zenodo.20434420
+Contreras-Torres, F. F. (2026). MOLRAPTOR: Molecular Fingerprint Rapid Generator. Zenodo. https://doi.org/10.5281/zenodo.20434420
 ```
 
 

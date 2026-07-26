@@ -10,7 +10,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from .config import MolraptorConfig
-from .morgan import MorganFingerprintProfile
+from .fingerprints import FINGERPRINT_TYPES, MorganFingerprintProfile
 from .pipeline import run
 from .version import __version__
 
@@ -18,7 +18,7 @@ from .version import __version__
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="molraptor",
-        description="Calculate traceable Morgan fingerprints from SMILES.",
+        description="Calculate traceable molecular fingerprints from SMILES.",
     )
     parser.add_argument(
         "--version",
@@ -45,30 +45,62 @@ def _build_parser() -> argparse.ArgumentParser:
         default=Path("artifacts"),
         metavar="PATH",
     )
-    run_parser.add_argument("--radius", type=int, default=2, metavar="INTEGER")
+    run_parser.add_argument(
+        "--fingerprint",
+        choices=FINGERPRINT_TYPES,
+        default="morgan",
+        help="Fingerprint type (default: morgan).",
+    )
+    run_parser.add_argument(
+        "--radius",
+        type=int,
+        default=None,
+        metavar="INTEGER",
+        help="Morgan radius (Morgan only).",
+    )
     run_parser.add_argument(
         "--fp-size",
         type=int,
-        default=2048,
+        default=None,
         metavar="INTEGER",
+        help="Morgan fingerprint size (Morgan only).",
     )
     run_parser.add_argument(
         "--include-chirality",
         action="store_true",
+        default=None,
+        help="Include chirality in Morgan fingerprints (Morgan only).",
     )
     return parser
 
 
 def _run(args: argparse.Namespace) -> None:
-    profile = MorganFingerprintProfile(
-        radius=args.radius,
-        fp_size=args.fp_size,
-        include_chirality=args.include_chirality,
+    morgan_option_used = any(
+        value is not None
+        for value in (args.radius, args.fp_size, args.include_chirality)
     )
+    if args.fingerprint != "morgan" and morgan_option_used:
+        raise ValueError(
+            "--radius, --fp-size, and --include-chirality are only valid "
+            "with --fingerprint morgan"
+        )
+
+    profile = None
+    if args.fingerprint == "morgan":
+        profile_kwargs: dict[str, int | bool] = {}
+        if args.radius is not None:
+            profile_kwargs["radius"] = args.radius
+        if args.fp_size is not None:
+            profile_kwargs["fp_size"] = args.fp_size
+        if args.include_chirality is not None:
+            profile_kwargs["include_chirality"] = args.include_chirality
+        profile = MorganFingerprintProfile(**profile_kwargs)
+
     config = MolraptorConfig(
         input_path=args.input,
         smiles_column=args.smiles_column,
         output_dir=args.output_dir,
+        fingerprint_type=args.fingerprint,
         profile=profile,
     )
     result = run(config)
@@ -79,25 +111,7 @@ def _run(args: argparse.Namespace) -> None:
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    """Parse command-line arguments and execute the file workflow.
-
-    Parameters
-    ----------
-    argv : sequence of str or None, optional
-        Arguments to parse without the executable name. If ``None``, arguments
-        are read from :data:`sys.argv` by :mod:`argparse`.
-
-    Raises
-    ------
-    SystemExit
-        If argument parsing fails or workflow validation reports a global
-        failure.
-
-    Notes
-    -----
-    The ``run`` command delegates to the same file workflow and in-memory
-    encoder exposed by the Python API.
-    """
+    """Parse command-line arguments and execute the file workflow."""
 
     parser = _build_parser()
     args = parser.parse_args(argv)

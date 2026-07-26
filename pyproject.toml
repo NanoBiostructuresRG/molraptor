@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 [project]
 name = "molraptor"
 dynamic = ["version"]
-description = "Encode ordered SMILES as traceable Morgan fingerprints using RDKit."
+description = "Encode ordered SMILES as traceable molecular fingerprints using RDKit."
 readme = "README.md"
 license = "LGPL-3.0-or-later"
 license-files = ["LICENSE", "COPYING", "COPYING.LESSER"]

@@ -16,6 +16,7 @@ def test_config_defaults_to_smiles_column_artifacts_and_default_profile(tmp_path
     assert config.input_path == tmp_path / "molecules.csv"
     assert config.smiles_column == "SMILES"
     assert config.output_dir == Path("artifacts")
+    assert config.fingerprint_type == "morgan"
     assert config.profile == MorganFingerprintProfile()
 
 
@@ -42,4 +43,23 @@ def test_config_rejects_unknown_fields(tmp_path):
         MolraptorConfig(
             input_path=tmp_path / "molecules.csv",
             unknown_option=True,
+        )
+
+
+def test_config_accepts_fixed_non_morgan_fingerprint(tmp_path):
+    config = MolraptorConfig(
+        input_path=tmp_path / "molecules.csv",
+        fingerprint_type="maccs",
+    )
+
+    assert config.fingerprint_type == "maccs"
+    assert config.profile is None
+
+
+def test_config_rejects_morgan_profile_for_other_fingerprint(tmp_path):
+    with pytest.raises(ValidationError, match="only valid"):
+        MolraptorConfig(
+            input_path=tmp_path / "molecules.csv",
+            fingerprint_type="maccs",
+            profile=MorganFingerprintProfile(),
         )
