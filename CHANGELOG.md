@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.1] - 2026-07-26
+
+### Added
+
+- Added the public `ResolvedFingerprintProfile` contract and
+`resolve_fingerprint_profile()` API for resolving effective fingerprint
+profiles, widths, and canonical profile hashes without encoding SMILES.
+- Exposed `FingerprintType` and `FINGERPRINT_TYPES` through the top-level
+package API.
+
+### Changed
+
+- Centralized fingerprint-profile validation and canonical hash resolution so
+profile inspection and fingerprint encoding use the same scientific
+metadata source.
+- Made resolved profiles read-only while preserving
+`FingerprintEncodingResult.profile` as a standard dictionary for backward
+compatibility.
+- Expanded regression coverage to preserve all seven v0.4.0 default-profile
+hashes and fingerprint outputs.
+
+### Fixed
+
+- Updated the CI public import boundary to include the new supported API
+symbols.
+
+---
+
 ## [0.4.0] - 2026-07-25
 
 ### Added
@@ -150,6 +178,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.4.1]: https://github.com/NanoBiostructuresRG/molraptor/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/NanoBiostructuresRG/molraptor/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/NanoBiostructuresRG/molraptor/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/NanoBiostructuresRG/molraptor/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/NanoBiostructuresRG/molraptor/compare/v0.1.0...v0.1.1

@@ -1,7 +1,7 @@
 # MOLRAPTOR: Molecular Fingerprint Rapid Generator
 
 
-[![Version](https://img.shields.io/badge/version-v0.4.0-blue.svg)](https://pypi.org/project/molraptor/)
+[![Version](https://img.shields.io/badge/version-v0.4.1-blue.svg)](https://pypi.org/project/molraptor/)
 [![PyPI](https://img.shields.io/pypi/v/molraptor.svg)](https://pypi.org/project/molraptor/)
 [![Python](https://img.shields.io/pypi/pyversions/molraptor.svg)](https://pypi.org/project/molraptor/)
 [![License: LGPL v3+](https://img.shields.io/badge/License-LGPL_v3%2B-blue.svg)](LICENSE)
@@ -9,9 +9,9 @@
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-teal.svg)](https://nanobiostructuresrg.github.io/molraptor/)
 
 
-**MOLRAPTOR** is a SMILES-first scientific library and command-line tool for generating reproducible binary molecular fingerprints from user-provided molecular representations.
+**MOLRAPTOR** is an open-source cheminformatics software package with a Python API and command-line interface for reproducible, SMILES-first generation of binary molecular fingerprints.
 
-MOLRAPTOR provides:
+**MOLRAPTOR** provides:
 
 - an in-memory Python API for direct SMILES encoding;
 - a command-line workflow for CSV and TXT inputs;
@@ -21,7 +21,7 @@ MOLRAPTOR provides:
 - traceable handling of valid and invalid inputs;
 - NumPy and CSV fingerprint outputs.
 
-MOLRAPTOR does not retrieve, curate, harmonize, canonicalize, or replace supplied SMILES. Each input string is parsed by RDKit only to construct the molecular graph required for the selected fingerprint calculation.
+**MOLRAPTOR** does not retrieve, curate, harmonize, canonicalize, or replace supplied SMILES. Each input string is parsed by RDKit only to construct the molecular graph required for the selected fingerprint calculation.
 
 ## Project Identity
 
