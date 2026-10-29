@@ -21,6 +21,11 @@ from rdkit.Chem.rdFingerprintGenerator import (  # type: ignore
     GetTopologicalTorsionGenerator,
 )
 
+from ._klekota_roth import (
+    KLEKOTA_ROTH_PATTERN_SET,
+    KLEKOTA_ROTH_PATTERN_SET_SHA256,
+    _get_klekota_roth_fingerprint,
+)
 from .version import __version__
 
 
@@ -162,6 +167,9 @@ FINGERPRINT_PARAMETERS: Mapping[
         "klekotaroth": MappingProxyType(
             {
                 "fp_size": 4860,
+                "pattern_set": KLEKOTA_ROTH_PATTERN_SET,
+                "pattern_set_sha256": KLEKOTA_ROTH_PATTERN_SET_SHA256,
+                "matching_policy": "rdkit-has-substruct-match",
             }
         ),
         "map4": MappingProxyType(
@@ -399,10 +407,7 @@ def _prepare_fingerprint(
     profile: MorganFingerprintProfile | None,
 ) -> tuple[ResolvedFingerprintProfile, Callable[[Chem.Mol], object]]:
     resolved = resolve_fingerprint_profile(fingerprint_type, profile)
-    if resolved.algorithm in {
-        "klekotaroth",
-        "map4",
-    }:
+    if resolved.algorithm == "map4":
         raise NotImplementedError(
             "Fingerprint encoding is not implemented for "
             f"{resolved.algorithm}/{resolved.representation}"
@@ -490,6 +495,9 @@ def _prepare_fingerprint(
 
     if algorithm == "maccs":
         return resolved, MACCSkeys.GenMACCSKeys
+
+    if algorithm == "klekotaroth":
+        return resolved, _get_klekota_roth_fingerprint
 
     raise AssertionError(f"Unhandled fingerprint algorithm: {algorithm}")
 

@@ -167,11 +167,10 @@ def test_representation_aware_profiles_use_schema_version_2():
 @pytest.mark.parametrize(
     ("algorithm", "representation"),
     (
-        ("klekotaroth", "binary"),
         ("map4", "minhash"),
     ),
 )
-def test_metadata_only_contracts_fail_explicitly_at_encoding_boundary(
+def test_metadata_only_contract_fails_explicitly_at_encoding_boundary(
     algorithm,
     representation,
 ):
