@@ -27,6 +27,7 @@ from ._klekota_roth import (
     KLEKOTA_ROTH_PATTERN_SET_SHA256,
     _get_klekota_roth_fingerprint,
 )
+from ._map4 import _get_map4_shingles
 from .version import __version__
 
 
@@ -193,6 +194,16 @@ FINGERPRINT_PARAMETERS: Mapping[
         "map4": MappingProxyType(
             {
                 "fp_size": 1024,
+                "radius": 2,
+                "include_chirality": False,
+                "include_duplicate_shingles": False,
+                "seed": 42,
+                "shingle_policy": (
+                    "map4-atom-pair-circular-environment"
+                ),
+                "minhash_backend": (
+                    "rdkit.Chem.rdMHFPFingerprint.MHFPEncoder"
+                ),
             }
         ),
     }
@@ -425,12 +436,6 @@ def _prepare_fingerprint(
     profile: MorganFingerprintProfile | None,
 ) -> tuple[ResolvedFingerprintProfile, Callable[[Chem.Mol], object]]:
     resolved = resolve_fingerprint_profile(fingerprint_type, profile)
-    if resolved.algorithm == "map4":
-        raise NotImplementedError(
-            "Fingerprint encoding is not implemented for "
-            f"{resolved.algorithm}/{resolved.representation}"
-        )
-
     algorithm = resolved.algorithm
     parameters = resolved.profile
 
@@ -534,6 +539,21 @@ def _prepare_fingerprint(
             )
 
         return resolved, encode_mhfp6
+
+    if algorithm == "map4":
+        encoder = MHFPEncoder(
+            resolved.width,
+            cast(int, parameters["seed"]),
+        )
+
+        def encode_map4(molecule: Chem.Mol) -> object:
+            shingles = _get_map4_shingles(
+                molecule,
+                radius=cast(int, parameters["radius"]),
+            )
+            return encoder.FromStringArray(shingles)
+
+        return resolved, encode_map4
 
     raise AssertionError(f"Unhandled fingerprint algorithm: {algorithm}")
 

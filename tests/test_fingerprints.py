@@ -27,6 +27,7 @@ EXPECTED_WIDTHS = {
     "maccs": 167,
     "klekotaroth": 4860,
     "mhfp6": 2048,
+    "map4": 1024,
 }
 IMPLEMENTED_ALGORITHMS = tuple(EXPECTED_WIDTHS)
 IMPLEMENTED_BINARY_ALGORITHMS = (
@@ -48,6 +49,7 @@ EXPECTED_PROFILE_HASHES = {
     "maccs": "fd662cb09e38c85089670d3c7bca885261c04936a326d4b0b7807a9ba104488d",
     "klekotaroth": "1b888c365a2d25e868273d8c3bf13c6e03d73434add2197a4984e1004dd99969",
     "mhfp6": "0326a002f5996daa9027c3f875c4ad4078d23fb579aa82b8bf9c30340f847ef8",
+    "map4": "8d72745a4a74c7d29be383cfe3c0f331334778e7a09ee9cf08bd4a86ff57610e",
 }
 
 EXPECTED_ACTIVE_BITS = {
@@ -100,6 +102,7 @@ def test_resolve_each_fingerprint_profile_without_encoding(fingerprint_type):
         "atompair": "count",
         "torsion": "count",
         "mhfp6": "minhash",
+        "map4": "minhash",
     }.get(fingerprint_type, "binary")
     expected_output_type = {
         "binary": "binary-bit-vector",

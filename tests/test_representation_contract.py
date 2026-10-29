@@ -165,23 +165,3 @@ def test_representation_aware_profiles_use_schema_version_2():
         )
 
         assert resolved.profile["profile_schema_version"] == "2.0"
-
-
-@pytest.mark.parametrize(
-    ("algorithm", "representation"),
-    (
-        ("map4", "minhash"),
-    ),
-)
-def test_metadata_only_contract_fails_explicitly_at_encoding_boundary(
-    algorithm,
-    representation,
-):
-    with pytest.raises(
-        NotImplementedError,
-        match=rf"{algorithm}/{representation}",
-    ):
-        fingerprints.encode_fingerprints(
-            ["CCO"],
-            fingerprint_type=algorithm,
-        )
