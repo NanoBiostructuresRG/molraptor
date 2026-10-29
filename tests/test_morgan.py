@@ -33,7 +33,7 @@ def test_existing_morgan_implementation_matches_golden_scientific_contract():
         "182c7884ecc33b6a86191036e148ad369820cf5b01d06b6a9144e19cbbf3d541"
     )
     assert result.profile_hash == (
-        "4e0eeceb5571e2e6cd9aee3f44da2a44884cbfae8d80e5858a57ec56b2505502"
+        "f25be67cff19905805a69fd52b3c176cc39f2e4a76bdc5c642323f5a03a6c215"
     )
     assert result.valid_indices == (0, 2)
     assert result.matrix_shape == (2, 64)
@@ -78,9 +78,11 @@ def test_profile_serialization_includes_all_fixed_defaults():
     profile = MorganFingerprintProfile()
 
     assert profile.serialize() == {
-        "profile_schema_version": "1.0",
+        "profile_schema_version": "2.0",
         "algorithm": "morgan",
+        "representation": "binary",
         "output_type": "binary-bit-vector",
+        "dtype": "uint8",
         "radius": 2,
         "fp_size": 2048,
         "include_chirality": False,

@@ -22,15 +22,16 @@ EXPECTED_WIDTHS = {
     "layered": 2048,
     "maccs": 167,
 }
+EXISTING_BINARY_ALGORITHMS = tuple(EXPECTED_WIDTHS)
 
 EXPECTED_PROFILE_HASHES = {
-    "morgan": "67a59787be47c622ba3dec767773eff1105a92d3e7750f0e774c8a118685f001",
-    "featmorgan": "6cb16696e3ed2f47eb0a24733ccbc45f628b652eda9c8f45642779fd863b01f4",
-    "atompair": "ce06b3ff95e75c52bc7c782d02a779614e173f0ffff2a7bc0a20d0fad41eba35",
-    "rdk": "f5c9c48b6966c7fc6c746f7f7404d9b8065e10a95bd66babd9c5e870435e37ab",
-    "torsion": "74c493a4ab9092c27a9cc9a57ba50375923d7326f2bcbad5645e5c268e7d8074",
-    "layered": "b07e4d68d8bd60635f37a958d49dc366b742668202b382e5ec4d7854890c3f68",
-    "maccs": "a8754b05298989da2d1fb53a0fbda098b095a6dc0186a36fee469465f73b30f3",
+    "morgan": "17669bc488012071ce9586dd5f07aefd61aa6aeade17f21d939b6165a9500379",
+    "featmorgan": "3060d22e79d0641e755b2ba785a29f882d6574e99b08d47cc75cdc8cac7440fe",
+    "atompair": "f138470b9482cf4bc20f7e011f4a9e8b5ebb5b17bb4ab79b435c8023874f7a95",
+    "rdk": "d792039b93db7a2e058bf2c493c55b11a7f3f8ab52822bc3e4a6e8b841da88ac",
+    "torsion": "39c5a2b2ad9318edf19e7e9add7696bad40833547a7af368d176717cc8691550",
+    "layered": "ae084c047f65c267995a1483db1605b22701608b0c5b3545029e777fe2dd0a6f",
+    "maccs": "fd662cb09e38c85089670d3c7bca885261c04936a326d4b0b7807a9ba104488d",
 }
 
 EXPECTED_ACTIVE_BITS = {
@@ -56,6 +57,8 @@ def test_all_approved_fingerprint_names_are_declared_once():
         "torsion",
         "layered",
         "maccs",
+        "klekotaroth",
+        "map4",
     )
     assert tuple(FINGERPRINT_PARAMETERS) == FINGERPRINT_TYPES
 
@@ -65,19 +68,22 @@ def test_declared_parameters_are_read_only():
         FINGERPRINT_PARAMETERS["morgan"]["radius"] = 3
 
 
-@pytest.mark.parametrize("fingerprint_type", FINGERPRINT_TYPES)
+@pytest.mark.parametrize("fingerprint_type", EXISTING_BINARY_ALGORITHMS)
 def test_resolve_each_fingerprint_profile_without_encoding(fingerprint_type):
     resolved = resolve_fingerprint_profile(fingerprint_type)
 
     assert isinstance(resolved, ResolvedFingerprintProfile)
     assert resolved.fingerprint_type == fingerprint_type
     assert resolved.profile["algorithm"] == fingerprint_type
+    assert resolved.profile["representation"] == "binary"
     assert resolved.profile["output_type"] == "binary-bit-vector"
-    assert resolved.fp_size == EXPECTED_WIDTHS[fingerprint_type]
+    assert resolved.profile["dtype"] == "uint8"
+    assert resolved.width == EXPECTED_WIDTHS[fingerprint_type]
+    assert resolved.fp_size == resolved.width
 
 
-@pytest.mark.parametrize("fingerprint_type", FINGERPRINT_TYPES)
-def test_default_profile_hash_matches_v040_golden_value(fingerprint_type):
+@pytest.mark.parametrize("fingerprint_type", EXISTING_BINARY_ALGORITHMS)
+def test_default_profile_hash_matches_v050_golden_value(fingerprint_type):
     assert resolve_fingerprint_profile(fingerprint_type).profile_hash == (
         EXPECTED_PROFILE_HASHES[fingerprint_type]
     )
@@ -96,7 +102,7 @@ def test_resolved_profile_is_read_only_and_defensively_copied():
     assert resolved_again.profile_hash == original_hash
 
 
-@pytest.mark.parametrize("fingerprint_type", FINGERPRINT_TYPES)
+@pytest.mark.parametrize("fingerprint_type", EXISTING_BINARY_ALGORITHMS)
 def test_resolved_profile_and_hash_match_encoding(fingerprint_type):
     resolved = resolve_fingerprint_profile(fingerprint_type)
     result = encode_fingerprints(["CCCC"], fingerprint_type=fingerprint_type)
@@ -140,7 +146,7 @@ def test_resolver_rejects_invalid_profile_object_type():
         resolve_fingerprint_profile("morgan", object())
 
 
-@pytest.mark.parametrize("fingerprint_type", FINGERPRINT_TYPES)
+@pytest.mark.parametrize("fingerprint_type", EXISTING_BINARY_ALGORITHMS)
 def test_each_fingerprint_produces_binary_uint8_with_effective_profile(
     fingerprint_type,
 ):
@@ -163,7 +169,7 @@ def test_each_fingerprint_produces_binary_uint8_with_effective_profile(
     assert result.profile["fp_size"] == EXPECTED_WIDTHS[fingerprint_type]
     assert isinstance(result.profile, dict)
 
-@pytest.mark.parametrize("fingerprint_type", FINGERPRINT_TYPES)
+@pytest.mark.parametrize("fingerprint_type", EXISTING_BINARY_ALGORITHMS)
 def test_empty_input_preserves_selected_fingerprint_width(fingerprint_type):
     result = encode_fingerprints([], fingerprint_type=fingerprint_type)
 
