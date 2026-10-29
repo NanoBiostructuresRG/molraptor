@@ -22,14 +22,21 @@ EXPECTED_WIDTHS = {
     "layered": 2048,
     "maccs": 167,
 }
-EXISTING_BINARY_ALGORITHMS = tuple(EXPECTED_WIDTHS)
+IMPLEMENTED_ALGORITHMS = tuple(EXPECTED_WIDTHS)
+IMPLEMENTED_BINARY_ALGORITHMS = (
+    "morgan",
+    "featmorgan",
+    "rdk",
+    "layered",
+    "maccs",
+)
 
 EXPECTED_PROFILE_HASHES = {
     "morgan": "17669bc488012071ce9586dd5f07aefd61aa6aeade17f21d939b6165a9500379",
     "featmorgan": "3060d22e79d0641e755b2ba785a29f882d6574e99b08d47cc75cdc8cac7440fe",
-    "atompair": "f138470b9482cf4bc20f7e011f4a9e8b5ebb5b17bb4ab79b435c8023874f7a95",
+    "atompair": "8c31e4c2ae14c8585e6e35049cd4e92ca84c1f1fe55679d431ff40153835b839",
     "rdk": "d792039b93db7a2e058bf2c493c55b11a7f3f8ab52822bc3e4a6e8b841da88ac",
-    "torsion": "39c5a2b2ad9318edf19e7e9add7696bad40833547a7af368d176717cc8691550",
+    "torsion": "47ce301893d8e083ca01910bb443b9b999606cd5b5dae9352d942adf479eed07",
     "layered": "ae084c047f65c267995a1483db1605b22701608b0c5b3545029e777fe2dd0a6f",
     "maccs": "fd662cb09e38c85089670d3c7bca885261c04936a326d4b0b7807a9ba104488d",
 }
@@ -37,9 +44,7 @@ EXPECTED_PROFILE_HASHES = {
 EXPECTED_ACTIVE_BITS = {
     "morgan": [80, 294, 640, 794, 1057],
     "featmorgan": [0, 539, 792, 1085],
-    "atompair": [880, 1144, 1145, 1336, 1404, 1405],
     "rdk": [709, 875, 1308, 1772, 1813, 1927],
-    "torsion": [60],
     "layered": [
         311, 333, 354, 360, 596, 610, 611, 674, 867, 993,
         1044, 1111, 1493, 1742, 1783,
@@ -68,21 +73,30 @@ def test_declared_parameters_are_read_only():
         FINGERPRINT_PARAMETERS["morgan"]["radius"] = 3
 
 
-@pytest.mark.parametrize("fingerprint_type", EXISTING_BINARY_ALGORITHMS)
+@pytest.mark.parametrize("fingerprint_type", IMPLEMENTED_ALGORITHMS)
 def test_resolve_each_fingerprint_profile_without_encoding(fingerprint_type):
     resolved = resolve_fingerprint_profile(fingerprint_type)
+    expected_representation = (
+        "count" if fingerprint_type in {"atompair", "torsion"} else "binary"
+    )
+    expected_output_type = (
+        "count-vector"
+        if expected_representation == "count"
+        else "binary-bit-vector"
+    )
+    expected_dtype = "uint32" if expected_representation == "count" else "uint8"
 
     assert isinstance(resolved, ResolvedFingerprintProfile)
     assert resolved.fingerprint_type == fingerprint_type
     assert resolved.profile["algorithm"] == fingerprint_type
-    assert resolved.profile["representation"] == "binary"
-    assert resolved.profile["output_type"] == "binary-bit-vector"
-    assert resolved.profile["dtype"] == "uint8"
+    assert resolved.profile["representation"] == expected_representation
+    assert resolved.profile["output_type"] == expected_output_type
+    assert resolved.profile["dtype"] == expected_dtype
     assert resolved.width == EXPECTED_WIDTHS[fingerprint_type]
     assert resolved.fp_size == resolved.width
 
 
-@pytest.mark.parametrize("fingerprint_type", EXISTING_BINARY_ALGORITHMS)
+@pytest.mark.parametrize("fingerprint_type", IMPLEMENTED_ALGORITHMS)
 def test_default_profile_hash_matches_v050_golden_value(fingerprint_type):
     assert resolve_fingerprint_profile(fingerprint_type).profile_hash == (
         EXPECTED_PROFILE_HASHES[fingerprint_type]
@@ -102,7 +116,7 @@ def test_resolved_profile_is_read_only_and_defensively_copied():
     assert resolved_again.profile_hash == original_hash
 
 
-@pytest.mark.parametrize("fingerprint_type", EXISTING_BINARY_ALGORITHMS)
+@pytest.mark.parametrize("fingerprint_type", IMPLEMENTED_ALGORITHMS)
 def test_resolved_profile_and_hash_match_encoding(fingerprint_type):
     resolved = resolve_fingerprint_profile(fingerprint_type)
     result = encode_fingerprints(["CCCC"], fingerprint_type=fingerprint_type)
@@ -146,7 +160,7 @@ def test_resolver_rejects_invalid_profile_object_type():
         resolve_fingerprint_profile("morgan", object())
 
 
-@pytest.mark.parametrize("fingerprint_type", EXISTING_BINARY_ALGORITHMS)
+@pytest.mark.parametrize("fingerprint_type", IMPLEMENTED_BINARY_ALGORITHMS)
 def test_each_fingerprint_produces_binary_uint8_with_effective_profile(
     fingerprint_type,
 ):
@@ -169,7 +183,7 @@ def test_each_fingerprint_produces_binary_uint8_with_effective_profile(
     assert result.profile["fp_size"] == EXPECTED_WIDTHS[fingerprint_type]
     assert isinstance(result.profile, dict)
 
-@pytest.mark.parametrize("fingerprint_type", EXISTING_BINARY_ALGORITHMS)
+@pytest.mark.parametrize("fingerprint_type", IMPLEMENTED_BINARY_ALGORITHMS)
 def test_empty_input_preserves_selected_fingerprint_width(fingerprint_type):
     result = encode_fingerprints([], fingerprint_type=fingerprint_type)
 

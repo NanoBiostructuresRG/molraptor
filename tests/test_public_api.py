@@ -33,8 +33,7 @@ def test_data_validator_importable():
 
 def test_morgan_fingerprint_api_importable():
     from molraptor import (
-        ALLOWED_REPRESENTATIONS,
-        DEFAULT_REPRESENTATIONS,
+        ALGORITHM_REPRESENTATIONS,
         FINGERPRINT_ALGORITHMS,
         FINGERPRINT_REPRESENTATIONS,
         FINGERPRINT_TYPES,
@@ -53,8 +52,7 @@ def test_morgan_fingerprint_api_importable():
     assert FINGERPRINT_TYPES is FINGERPRINT_ALGORITHMS
     assert len(FINGERPRINT_ALGORITHMS) == 9
     assert len(FINGERPRINT_REPRESENTATIONS) == 3
-    assert len(ALLOWED_REPRESENTATIONS) == 9
-    assert len(DEFAULT_REPRESENTATIONS) == 9
+    assert len(ALGORITHM_REPRESENTATIONS) == 9
     assert FingerprintRepresentation is not None
     assert FingerprintEncodingResult is not None
     assert FingerprintInputStatus is not None
@@ -75,8 +73,7 @@ def test_dunder_all_contains_expected_symbols():
         "FingerprintRepresentation",
         "FINGERPRINT_ALGORITHMS",
         "FINGERPRINT_REPRESENTATIONS",
-        "ALLOWED_REPRESENTATIONS",
-        "DEFAULT_REPRESENTATIONS",
+        "ALGORITHM_REPRESENTATIONS",
         "FingerprintType",
         "FINGERPRINT_TYPES",
         "MorganFingerprintProfile",

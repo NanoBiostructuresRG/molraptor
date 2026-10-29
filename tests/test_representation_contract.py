@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import inspect
+
 import molraptor
 import pytest
 
@@ -21,23 +23,12 @@ EXPECTED_ALGORITHMS = (
     "map4",
 )
 EXPECTED_REPRESENTATIONS = ("binary", "count", "minhash")
-EXPECTED_ALLOWED_REPRESENTATIONS = {
-    "morgan": ("binary",),
-    "featmorgan": ("binary",),
-    "atompair": ("binary", "count"),
-    "rdk": ("binary",),
-    "torsion": ("binary", "count"),
-    "layered": ("binary",),
-    "maccs": ("binary",),
-    "klekotaroth": ("binary",),
-    "map4": ("minhash",),
-}
-EXPECTED_DEFAULT_REPRESENTATIONS = {
+EXPECTED_ALGORITHM_REPRESENTATIONS = {
     "morgan": "binary",
     "featmorgan": "binary",
-    "atompair": "binary",
+    "atompair": "count",
     "rdk": "binary",
-    "torsion": "binary",
+    "torsion": "count",
     "layered": "binary",
     "maccs": "binary",
     "klekotaroth": "binary",
@@ -46,10 +37,8 @@ EXPECTED_DEFAULT_REPRESENTATIONS = {
 EXPECTED_RESOLVED_CONTRACTS = (
     ("morgan", "binary", 2048),
     ("featmorgan", "binary", 2048),
-    ("atompair", "binary", 2048),
     ("atompair", "count", 2048),
     ("rdk", "binary", 2048),
-    ("torsion", "binary", 2048),
     ("torsion", "count", 2048),
     ("layered", "binary", 2048),
     ("maccs", "binary", 167),
@@ -61,30 +50,13 @@ EXPECTED_REPRESENTATION_SEMANTICS = {
     "count": ("count-vector", "uint32"),
     "minhash": ("minhash-sketch", "uint32"),
 }
-REJECTED_COMBINATIONS = (
-    ("morgan", "count"),
-    ("morgan", "minhash"),
-    ("featmorgan", "count"),
-    ("maccs", "count"),
-    ("klekotaroth", "count"),
-    ("klekotaroth", "minhash"),
-    ("map4", "binary"),
-    ("map4", "count"),
-    ("atompair", "minhash"),
-    ("torsion", "minhash"),
-    ("rdk", "count"),
-    ("layered", "count"),
-)
-
-
 def test_v050_contract_names_are_public():
     required_names = {
         "FingerprintAlgorithm",
         "FingerprintRepresentation",
         "FINGERPRINT_ALGORITHMS",
         "FINGERPRINT_REPRESENTATIONS",
-        "ALLOWED_REPRESENTATIONS",
-        "DEFAULT_REPRESENTATIONS",
+        "ALGORITHM_REPRESENTATIONS",
     }
 
     assert required_names <= set(molraptor.__all__)
@@ -92,17 +64,20 @@ def test_v050_contract_names_are_public():
         assert getattr(molraptor, name) is getattr(fingerprints, name)
 
 
+def test_unreleased_combinatorial_representation_names_are_not_public():
+    for name in ("ALLOWED_REPRESENTATIONS", "DEFAULT_REPRESENTATIONS"):
+        assert name not in molraptor.__all__
+        assert not hasattr(molraptor, name)
+        assert not hasattr(fingerprints, name)
+
+
 def test_algorithm_and_representation_registries_are_independent():
     assert fingerprints.FINGERPRINT_ALGORITHMS == EXPECTED_ALGORITHMS
     assert fingerprints.FINGERPRINT_REPRESENTATIONS == EXPECTED_REPRESENTATIONS
 
-    allowed = fingerprints.ALLOWED_REPRESENTATIONS
-    assert tuple(allowed) == EXPECTED_ALGORITHMS
-    assert {
-        algorithm: tuple(allowed[algorithm]) for algorithm in allowed
-    } == EXPECTED_ALLOWED_REPRESENTATIONS
-    assert dict(fingerprints.DEFAULT_REPRESENTATIONS) == (
-        EXPECTED_DEFAULT_REPRESENTATIONS
+    assert tuple(fingerprints.ALGORITHM_REPRESENTATIONS) == EXPECTED_ALGORITHMS
+    assert dict(fingerprints.ALGORITHM_REPRESENTATIONS) == (
+        EXPECTED_ALGORITHM_REPRESENTATIONS
     )
 
 
@@ -124,7 +99,6 @@ def test_approved_algorithm_representation_contract_resolves(
 ):
     resolved = fingerprints.resolve_fingerprint_profile(
         algorithm,
-        representation=representation,
     )
 
     assert resolved.profile["algorithm"] == algorithm
@@ -134,30 +108,25 @@ def test_approved_algorithm_representation_contract_resolves(
 
 @pytest.mark.parametrize(
     ("algorithm", "representation"),
-    REJECTED_COMBINATIONS,
+    EXPECTED_ALGORITHM_REPRESENTATIONS.items(),
 )
-def test_unapproved_algorithm_representation_contract_is_rejected(
+def test_algorithm_resolves_to_its_single_representation(
     algorithm,
     representation,
 ):
-    with pytest.raises(ValueError):
-        fingerprints.resolve_fingerprint_profile(
-            algorithm,
-            representation=representation,
-        )
-
-
-@pytest.mark.parametrize(
-    ("algorithm", "default_representation"),
-    EXPECTED_DEFAULT_REPRESENTATIONS.items(),
-)
-def test_omitted_representation_resolves_to_algorithm_default(
-    algorithm,
-    default_representation,
-):
     resolved = fingerprints.resolve_fingerprint_profile(algorithm)
 
-    assert resolved.profile["representation"] == default_representation
+    assert resolved.representation == representation
+    assert resolved.profile["representation"] == representation
+
+
+def test_representation_is_not_a_public_function_parameter():
+    assert "representation" not in inspect.signature(
+        fingerprints.resolve_fingerprint_profile
+    ).parameters
+    assert "representation" not in inspect.signature(
+        fingerprints.encode_fingerprints
+    ).parameters
 
 
 @pytest.mark.parametrize(
@@ -180,7 +149,6 @@ def test_resolved_profile_declares_representation_semantics(
 
     resolved = fingerprints.resolve_fingerprint_profile(
         representative_algorithm,
-        representation=representation,
     )
 
     assert resolved.profile["output_type"] == expected_output_type
@@ -191,7 +159,6 @@ def test_representation_aware_profiles_use_schema_version_2():
     for algorithm, representation, _width in EXPECTED_RESOLVED_CONTRACTS:
         resolved = fingerprints.resolve_fingerprint_profile(
             algorithm,
-            representation=representation,
         )
 
         assert resolved.profile["profile_schema_version"] == "2.0"
@@ -200,8 +167,6 @@ def test_representation_aware_profiles_use_schema_version_2():
 @pytest.mark.parametrize(
     ("algorithm", "representation"),
     (
-        ("atompair", "count"),
-        ("torsion", "count"),
         ("klekotaroth", "binary"),
         ("map4", "minhash"),
     ),
@@ -217,5 +182,4 @@ def test_metadata_only_contracts_fail_explicitly_at_encoding_boundary(
         fingerprints.encode_fingerprints(
             ["CCO"],
             fingerprint_type=algorithm,
-            representation=representation,
         )

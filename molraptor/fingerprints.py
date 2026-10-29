@@ -53,30 +53,15 @@ FINGERPRINT_REPRESENTATIONS: tuple[FingerprintRepresentation, ...] = (
     "count",
     "minhash",
 )
-ALLOWED_REPRESENTATIONS: Mapping[
-    FingerprintAlgorithm, tuple[FingerprintRepresentation, ...]
-] = MappingProxyType(
-    {
-        "morgan": ("binary",),
-        "featmorgan": ("binary",),
-        "atompair": ("binary", "count"),
-        "rdk": ("binary",),
-        "torsion": ("binary", "count"),
-        "layered": ("binary",),
-        "maccs": ("binary",),
-        "klekotaroth": ("binary",),
-        "map4": ("minhash",),
-    }
-)
-DEFAULT_REPRESENTATIONS: Mapping[
+ALGORITHM_REPRESENTATIONS: Mapping[
     FingerprintAlgorithm, FingerprintRepresentation
 ] = MappingProxyType(
     {
         "morgan": "binary",
         "featmorgan": "binary",
-        "atompair": "binary",
+        "atompair": "count",
         "rdk": "binary",
-        "torsion": "binary",
+        "torsion": "count",
         "layered": "binary",
         "maccs": "binary",
         "klekotaroth": "binary",
@@ -139,7 +124,6 @@ FINGERPRINT_PARAMETERS: Mapping[
                 "fp_size": 2048,
                 "include_chirality": False,
                 "use_2d": True,
-                "count_simulation": True,
             }
         ),
         "rdk": MappingProxyType(
@@ -158,7 +142,6 @@ FINGERPRINT_PARAMETERS: Mapping[
                 "torsion_atom_count": 4,
                 "fp_size": 2048,
                 "include_chirality": False,
-                "count_simulation": True,
             }
         ),
         "layered": MappingProxyType(
@@ -364,10 +347,8 @@ def _sha256_json(value: object, *, sort_keys: bool) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def _fixed_profile(
-    algorithm: FingerprintAlgorithm,
-    representation: FingerprintRepresentation,
-) -> SerializedProfile:
+def _fixed_profile(algorithm: FingerprintAlgorithm) -> SerializedProfile:
+    representation = ALGORITHM_REPRESENTATIONS[algorithm]
     semantics = _REPRESENTATION_SEMANTICS[representation]
     return {
         "profile_schema_version": "2.0",
@@ -382,23 +363,13 @@ def _fixed_profile(
 def resolve_fingerprint_profile(
     fingerprint_type: FingerprintType = "morgan",
     profile: MorganFingerprintProfile | None = None,
-    *,
-    representation: FingerprintRepresentation | None = None,
 ) -> ResolvedFingerprintProfile:
     """Resolve a complete effective fingerprint profile without encoding."""
 
     if fingerprint_type not in FINGERPRINT_ALGORITHMS:
         raise ValueError(f"Unsupported fingerprint type: {fingerprint_type}")
     algorithm = cast(FingerprintAlgorithm, fingerprint_type)
-    if representation is None:
-        representation = DEFAULT_REPRESENTATIONS[algorithm]
-    elif representation not in FINGERPRINT_REPRESENTATIONS:
-        raise ValueError(f"Unsupported fingerprint representation: {representation}")
-    if representation not in ALLOWED_REPRESENTATIONS[algorithm]:
-        raise ValueError(
-            f"Unsupported algorithm-representation combination: "
-            f"{algorithm}/{representation}"
-        )
+    representation = ALGORITHM_REPRESENTATIONS[algorithm]
     if profile is not None and not isinstance(profile, MorganFingerprintProfile):
         raise TypeError("profile must be a MorganFingerprintProfile or None")
     if algorithm != "morgan" and profile is not None:
@@ -409,7 +380,7 @@ def resolve_fingerprint_profile(
     if algorithm == "morgan":
         effective_profile = (profile or MorganFingerprintProfile()).serialize()
     else:
-        effective_profile = _fixed_profile(algorithm, representation)
+        effective_profile = _fixed_profile(algorithm)
 
     profile_hash = _sha256_json(effective_profile, sort_keys=True)
     read_only_profile = MappingProxyType(dict(effective_profile))
@@ -426,14 +397,9 @@ def resolve_fingerprint_profile(
 def _prepare_fingerprint(
     fingerprint_type: FingerprintType,
     profile: MorganFingerprintProfile | None,
-    representation: FingerprintRepresentation | None,
 ) -> tuple[ResolvedFingerprintProfile, Callable[[Chem.Mol], object]]:
-    resolved = resolve_fingerprint_profile(
-        fingerprint_type,
-        profile,
-        representation=representation,
-    )
-    if resolved.representation != "binary" or resolved.algorithm in {
+    resolved = resolve_fingerprint_profile(fingerprint_type, profile)
+    if resolved.algorithm in {
         "klekotaroth",
         "map4",
     }:
@@ -482,10 +448,9 @@ def _prepare_fingerprint(
             maxDistance=cast(int, parameters["max_distance"]),
             includeChirality=cast(bool, parameters["include_chirality"]),
             use2D=cast(bool, parameters["use_2d"]),
-            countSimulation=cast(bool, parameters["count_simulation"]),
             fpSize=resolved.width,
         )
-        return resolved, generator.GetFingerprint
+        return resolved, generator.GetCountFingerprintAsNumPy
 
     if algorithm == "rdk":
         def encode_rdk(molecule: Chem.Mol) -> object:
@@ -506,10 +471,9 @@ def _prepare_fingerprint(
         generator = GetTopologicalTorsionGenerator(
             includeChirality=cast(bool, parameters["include_chirality"]),
             torsionAtomCount=cast(int, parameters["torsion_atom_count"]),
-            countSimulation=cast(bool, parameters["count_simulation"]),
             fpSize=resolved.width,
         )
-        return resolved, generator.GetFingerprint
+        return resolved, generator.GetCountFingerprintAsNumPy
 
     if algorithm == "layered":
         def encode_layered(molecule: Chem.Mol) -> object:
@@ -551,15 +515,14 @@ def encode_fingerprints(
     profile: MorganFingerprintProfile | None = None,
     *,
     fingerprint_type: FingerprintType = "morgan",
-    representation: FingerprintRepresentation | None = None,
 ) -> FingerprintEncodingResult:
-    """Encode ordered SMILES with a selected algorithm and representation.
+    """Encode ordered SMILES with a selected fingerprint algorithm.
 
     Existing calls that pass a :class:`MorganFingerprintProfile` as the second
     positional argument continue to calculate Morgan fingerprints. Other
     algorithms use their fixed effective profiles and reject a Morgan profile.
-    Algorithm-representation contracts without an implemented encoder fail
-    explicitly rather than substituting another representation.
+    Each algorithm has one fixed representation. Algorithms without an
+    implemented encoder fail explicitly.
     """
 
     if isinstance(smiles, (str, bytes)):
@@ -572,13 +535,15 @@ def encode_fingerprints(
     resolved_profile, encode_molecule = _prepare_fingerprint(
         fingerprint_type,
         profile,
-        representation,
     )
     ordered_smiles = tuple(smiles)
     for index, value in enumerate(ordered_smiles):
         if not isinstance(value, str):
             raise TypeError(f"smiles[{index}] must be a string")
 
+    matrix_dtype = (
+        np.uint32 if resolved_profile.representation == "count" else np.uint8
+    )
     rows: list[np.ndarray] = []
     valid_indices: list[int] = []
     statuses: list[FingerprintInputStatus] = []
@@ -601,8 +566,11 @@ def encode_fingerprints(
             continue
 
         fingerprint = encode_molecule(molecule)
-        row = np.zeros(resolved_profile.width, dtype=np.uint8)
-        DataStructs.ConvertToNumpyArray(fingerprint, row)
+        if resolved_profile.representation == "count":
+            row = np.asarray(fingerprint, dtype=np.uint32)
+        else:
+            row = np.zeros(resolved_profile.width, dtype=np.uint8)
+            DataStructs.ConvertToNumpyArray(fingerprint, row)
         fingerprint_index = len(rows)
         rows.append(row)
         valid_indices.append(input_index)
@@ -616,9 +584,9 @@ def encode_fingerprints(
         )
 
     if rows:
-        matrix = np.vstack(rows).astype(np.uint8, copy=False)
+        matrix = np.vstack(rows).astype(matrix_dtype, copy=False)
     else:
-        matrix = np.empty((0, resolved_profile.width), dtype=np.uint8)
+        matrix = np.empty((0, resolved_profile.width), dtype=matrix_dtype)
 
     return FingerprintEncodingResult(
         fingerprints=matrix,
@@ -641,8 +609,7 @@ __all__ = [
     "FingerprintRepresentation",
     "FINGERPRINT_ALGORITHMS",
     "FINGERPRINT_REPRESENTATIONS",
-    "ALLOWED_REPRESENTATIONS",
-    "DEFAULT_REPRESENTATIONS",
+    "ALGORITHM_REPRESENTATIONS",
     "FingerprintType",
     "FINGERPRINT_TYPES",
     "FINGERPRINT_PARAMETERS",
