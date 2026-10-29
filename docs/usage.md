@@ -65,18 +65,21 @@ Each execution calculates one fingerprint type.
 
 MOLRAPTOR supports these public fingerprint identifiers:
 
-| Identifier   | Fingerprint         | Width                       |
-| ------------ | ------------------- | --------------------------- |
-| `morgan`     | Morgan              | Configurable; default: 2048 |
-| `featmorgan` | Feature Morgan      | 2048                        |
-| `atompair`   | Atom Pair           | 2048                        |
-| `rdk`        | RDKit topological   | 2048                        |
-| `torsion`    | Topological Torsion | 2048                        |
-| `layered`    | Layered             | 2048                        |
-| `maccs`      | MACCS keys          | 167                         |
+| Identifier | Fingerprint | Representation | Width | Dtype |
+|---|---|---|---:|---|
+| `morgan` | Morgan | binary | configurable; default 2048 | `uint8` |
+| `featmorgan` | Feature Morgan | binary | 2048 | `uint8` |
+| `atompair` | Atom Pair | count | 2048 | `uint32` |
+| `rdk` | RDKit topological | binary | 2048 | `uint8` |
+| `torsion` | Topological Torsion | count | 2048 | `uint32` |
+| `layered` | Layered | binary | 2048 | `uint8` |
+| `maccs` | MACCS keys | binary | 167 | `uint8` |
+| `klekotaroth` | Klekota–Roth | binary | 4860 | `uint8` |
+| `mhfp6` | MHFP6 | minhash | 2048 | `uint32` |
+| `map4` | MAP4 | minhash | 1024 | `uint32` |
 
 Morgan is the default fingerprint and accepts configurable settings. The other
-fingerprint types use fixed effective profiles.
+nine algorithms use fixed effective profiles.
 
 ## Command-Line Quick Start
 
@@ -133,6 +136,9 @@ rdk
 torsion
 layered
 maccs
+klekotaroth
+mhfp6
+map4
 ```
 
 ### Morgan settings
@@ -197,8 +203,9 @@ The default column name is `SMILES`. Input order, duplicates, and empty cells
 are preserved for validation and traceability.
 
 Only the selected column is used for encoding. MOLRAPTOR does not retrieve
-records, infer labels, curate unrelated columns, or replace the supplied
-molecular representations.
+records or infer labels. MOLRAPTOR does not retrieve, curate, harmonize,
+canonicalize, or replace the user-supplied SMILES as an input-preprocessing
+step.
 
 ### TXT
 
@@ -331,10 +338,19 @@ The fingerprint matrix:
 
 * contains one row per valid input;
 * has shape `(N_valid, fingerprint_width)`;
-* uses the `numpy.uint8` dtype;
-* contains binary `0` or `1` values;
+* uses the representation-dependent dtype contract shown below;
 * preserves the order and duplicates of valid inputs;
 * does not contain artificial zero-vector rows for invalid inputs.
+
+```text
+binary  → uint8
+count   → uint32
+minhash → uint32
+```
+
+Binary values represent feature presence or absence. Count values represent
+feature multiplicity or frequency. MinHash values are sketch components, not
+molecular feature-presence bits or feature counts.
 
 The encoder performs no file I/O. MOLRAPTOR parses each supplied SMILES with
 RDKit to construct the molecular graph required for fingerprint calculation,
@@ -354,20 +370,20 @@ artifacts/
 
 ### `fingerprints.npy`
 
-Binary fingerprint matrix for the selected fingerprint type, stored as a NumPy
-array.
+Numerical fingerprint-representation matrix for the selected fingerprint type,
+stored as a NumPy array.
 
-| Property | Value                          |
-| -------- | ------------------------------ |
-| Shape    | `(N_valid, fingerprint_width)` |
-| Dtype    | `numpy.uint8`                  |
-| Rows     | Valid inputs only              |
-| Values   | Binary `0` or `1`              |
+| Property | Value                                          |
+| -------- | ---------------------------------------------- |
+| Shape    | `(N_valid, fingerprint_width)`                 |
+| Dtype    | binary → `uint8`; count/minhash → `uint32`     |
+| Rows     | Valid inputs only                              |
+| Values   | Representation-dependent matrix coordinates   |
 
 ### `fingerprints.csv`
 
-The same binary fingerprint matrix in CSV form. Its row order is identical to
-`fingerprints.npy` and follows `fingerprint_index`.
+Tabular serialization of the same matrix values. Its row order is identical
+to `fingerprints.npy` and follows `fingerprint_index`.
 
 ### `input_statuses.csv`
 
@@ -454,7 +470,7 @@ The in-memory encoder may return an empty matrix with shape
 workflow because a persisted fingerprint dataset with no valid rows is not
 considered a successful run.
 
-## Reproducibility
+## Encoding Traceability
 
 Every encoding result records:
 

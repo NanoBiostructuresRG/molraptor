@@ -1,7 +1,7 @@
 # MOLRAPTOR: Molecular Fingerprint Rapid Generator
 
 
-[![Version](https://img.shields.io/badge/version-v0.4.1-blue.svg)](https://pypi.org/project/molraptor/)
+[![Version](https://img.shields.io/badge/version-v0.5.0-blue.svg)](https://pypi.org/project/molraptor/)
 [![PyPI](https://img.shields.io/pypi/v/molraptor.svg)](https://pypi.org/project/molraptor/)
 [![Python](https://img.shields.io/pypi/pyversions/molraptor.svg)](https://pypi.org/project/molraptor/)
 [![License: LGPL v3+](https://img.shields.io/badge/License-LGPL_v3%2B-blue.svg)](LICENSE)
@@ -9,19 +9,19 @@
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-teal.svg)](https://nanobiostructuresrg.github.io/molraptor/)
 
 
-**MOLRAPTOR** is an open-source cheminformatics software package with a Python API and command-line interface for reproducible, SMILES-first generation of binary molecular fingerprints.
+**MOLRAPTOR** is an open-source cheminformatics software package with a Python API and command-line interface for traceable, SMILES-first generation of molecular fingerprint representations, including binary, count, and MinHash.
 
 **MOLRAPTOR** provides:
 
 - an in-memory Python API for direct SMILES encoding;
 - a command-line workflow for CSV and TXT inputs;
-- Morgan, Feature Morgan, Atom Pair, RDKit topological, Topological Torsion, Layered, and MACCS fingerprints;
-- fixed and serializable effective profiles, with configurable Morgan settings;
+- 10 fingerprint algorithms: Morgan, Feature Morgan, Atom Pair, RDKit topological, Topological Torsion, Layered, MACCS, Klekota–Roth, MHFP6, and MAP4;
+- a configurable Morgan profile and fixed effective profiles for the other nine algorithms;
 - deterministic input and profile hashes;
 - traceable handling of valid and invalid inputs;
 - NumPy and CSV fingerprint outputs.
 
-**MOLRAPTOR** does not retrieve, curate, harmonize, canonicalize, or replace supplied SMILES. Each input string is parsed by RDKit only to construct the molecular graph required for the selected fingerprint calculation.
+**MOLRAPTOR** does not retrieve, curate, harmonize, canonicalize, or replace the user-supplied SMILES as an input-preprocessing step. Each input string is parsed by RDKit to construct the molecular graph required for the selected fingerprint calculation.
 
 ## Project Identity
 
@@ -123,6 +123,9 @@ rdk
 torsion
 layered
 maccs
+klekotaroth
+mhfp6
+map4
 ```
 
 Each execution calculates one fingerprint type.
@@ -196,14 +199,18 @@ print(result.profile["algorithm"])
 # maccs
 ```
 
-Morgan remains the default and accepts a configurable `MorganFingerprintProfile`. The other fingerprint types use their fixed effective profiles.
+Morgan remains the default and accepts a configurable `MorganFingerprintProfile`. The other nine algorithms use fixed effective profiles.
 
 The returned fingerprint matrix:
 
 - contains one row per valid input;
-- has shape `(N_valid, fp_size)`;
-- uses the `numpy.uint8` dtype;
+- has shape `(N_valid, fingerprint_width)`;
+- uses a representation-dependent dtype: binary → `numpy.uint8`, count → `numpy.uint32`, and MinHash → `numpy.uint32`;
 - preserves the order and duplicates of valid inputs.
+
+Binary values represent feature presence or absence, count values represent
+feature multiplicity or frequency, and MinHash values are sketch components
+rather than presence bits or feature counts.
 
 Invalid inputs remain traceable through `result.input_statuses` and are never represented by artificial zero vectors.
 
@@ -275,15 +282,16 @@ artifacts/
 
 ### `fingerprints.npy`
 
-Binary fingerprint matrix for the selected fingerprint type, stored as a NumPy array.
+Numerical fingerprint-representation matrix for the selected fingerprint type,
+stored as a NumPy array.
 
-- shape: `(N_valid, fp_size)`
-- dtype: `numpy.uint8`
+- shape: `(N_valid, fingerprint_width)`
+- dtype: binary → `numpy.uint8`; count → `numpy.uint32`; MinHash → `numpy.uint32`
 - rows: valid inputs only
 
 ### `fingerprints.csv`
 
-The same binary fingerprint matrix in tabular CSV form.
+Tabular serialization of the same matrix values.
 
 ### `input_statuses.csv`
 
@@ -343,12 +351,21 @@ The public package exports are:
 
 ```python
 from molraptor import (
+    ALGORITHM_REPRESENTATIONS,
     DataValidator,
+    FINGERPRINT_ALGORITHMS,
+    FINGERPRINT_REPRESENTATIONS,
+    FINGERPRINT_TYPES,
+    FingerprintAlgorithm,
     FingerprintEncodingResult,
     FingerprintInputStatus,
+    FingerprintRepresentation,
+    FingerprintType,
     MolraptorConfig,
     MorganFingerprintProfile,
+    ResolvedFingerprintProfile,
     encode_fingerprints,
+    resolve_fingerprint_profile,
     run,
     validate_config,
     __version__,
@@ -359,7 +376,7 @@ The main scientific contracts are:
 
 - `MorganFingerprintProfile`: complete effective Morgan settings;
 - `encode_fingerprints`: deterministic in-memory SMILES encoding;
-- `FingerprintEncodingResult`: fingerprint matrix and reproducibility metadata;
+- `FingerprintEncodingResult`: fingerprint matrix and encoding metadata;
 - `FingerprintInputStatus`: per-input validity and matrix-row alignment;
 - `MolraptorConfig`: validated CSV/TXT workflow configuration;
 - `run`: file workflow execution.
@@ -371,8 +388,8 @@ Modules and objects not exported from `molraptor.__all__` are internal implement
 | MOLRAPTOR does | MOLRAPTOR does not |
 |---|---|
 | Accept user-provided SMILES from Python, CSV, or TXT. | Retrieve molecular records from PubChem or other databases. |
-| Parse SMILES with RDKit for fingerprint calculation. | Curate, harmonize, canonicalize, or replace SMILES. |
-| Generate supported binary molecular fingerprints. | Generate labels or activity classes. |
+| Parse SMILES with RDKit for fingerprint calculation. | Retrieve, curate, harmonize, canonicalize, or replace the user-supplied SMILES as an input-preprocessing step. |
+| Generate supported binary, count, and MinHash molecular fingerprint representations. | Generate labels or activity classes. |
 | Record profiles, hashes, versions, and row alignment. | Select or recommend a scientifically preferred fingerprint. |
 | Preserve order and duplicates. | Train or evaluate machine-learning models. |
 | Isolate invalid individual inputs. | Calculate molecular descriptors or 3D conformations. |
@@ -389,7 +406,7 @@ Python API / CSV / TXT / CLI
 
 Input readers, workflow orchestration, and output writers depend on the scientific core. The core performs no file I/O and has no dependency on the command-line interface or external applications.
 
-## Reproducibility
+## Encoding Traceability
 
 Each encoding result records:
 

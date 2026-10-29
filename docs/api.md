@@ -1,14 +1,20 @@
 # API Reference
 
-MOLRAPTOR exposes thirteen public symbols through `molraptor.__all__`. The project
+MOLRAPTOR exposes 18 public symbols through `molraptor.__all__`. The project
 is pre-stable, so this API may change before 1.0. Objects not listed here are
 implementation details and are not part of the supported public contract.
 
 ```python
+from molraptor import __version__
 from molraptor import MolraptorConfig
-from molraptor import validate_config
 from molraptor import run
+from molraptor import validate_config
 from molraptor import DataValidator
+from molraptor import FingerprintAlgorithm
+from molraptor import FingerprintRepresentation
+from molraptor import FINGERPRINT_ALGORITHMS
+from molraptor import FINGERPRINT_REPRESENTATIONS
+from molraptor import ALGORITHM_REPRESENTATIONS
 from molraptor import FingerprintType
 from molraptor import FINGERPRINT_TYPES
 from molraptor import MorganFingerprintProfile
@@ -17,8 +23,20 @@ from molraptor import FingerprintEncodingResult
 from molraptor import FingerprintInputStatus
 from molraptor import resolve_fingerprint_profile
 from molraptor import encode_fingerprints
-from molraptor import __version__
 ```
+
+---
+
+## Algorithm and representation contracts
+
+- `FingerprintAlgorithm` identifies the 10 approved fingerprint algorithms.
+- `FingerprintRepresentation` identifies the `binary`, `count`, and `minhash`
+  representation classes.
+- `FINGERPRINT_ALGORITHMS` is the ordered registry of approved algorithms.
+- `FINGERPRINT_REPRESENTATIONS` is the ordered registry of representation
+  classes.
+- `ALGORITHM_REPRESENTATIONS` maps each algorithm to its representation.
+- `FingerprintType` and `FINGERPRINT_TYPES` remain compatibility aliases.
 
 ---
 
@@ -83,9 +101,12 @@ rdk
 torsion
 layered
 maccs
+klekotaroth
+mhfp6
+map4
 ```
 
-Morgan uses a configurable effective profile. The other fingerprint types use
+Morgan uses a configurable effective profile. The other nine algorithms use
 fixed effective profiles.
 
 ### Resolve a profile before encoding
@@ -116,17 +137,27 @@ the `"morgan"` fingerprint type.
 - performs no file I/O;
 - preserves exact input strings, order, and duplicates;
 - parses each supplied SMILES with RDKit;
-- generates one binary fingerprint row per valid input;
+- generates one fingerprint-representation row per valid input;
 - omits invalid inputs from the matrix instead of inserting zero vectors;
 - records one `FingerprintInputStatus` for every original input;
 - returns deterministic ordered-input and profile hashes.
 
-The matrix has shape `(N_valid, fingerprint_width)` and dtype `numpy.uint8`.
-Its values are binary `0` or `1`.
+The matrix has shape `(N_valid, fingerprint_width)` and uses this
+representation-dependent dtype contract:
 
-MOLRAPTOR uses the supplied SMILES to construct the molecular graph required
-for fingerprint calculation. It does not return, canonicalize, harmonize, or
-replace the caller's molecular representation.
+```text
+binary  → uint8
+count   → uint32
+minhash → uint32
+```
+
+Binary values represent feature presence or absence. Count values represent
+feature multiplicity or frequency. MinHash values are sketch components, not
+molecular feature-presence bits or feature counts.
+
+MOLRAPTOR does not retrieve, curate, harmonize, canonicalize, or replace the
+user-supplied SMILES as an input-preprocessing step. It parses supplied SMILES
+to construct the molecular graph required for fingerprint calculation.
 
 ### Function contract
 

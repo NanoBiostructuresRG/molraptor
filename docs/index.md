@@ -12,8 +12,9 @@
       <span class="ms-wordmark">MOLRAPTOR</span>
     </div>
     <p class="ms-subtitle">
-      Scientific library and command-line tool for generating reproducible
-      binary molecular fingerprints from user-provided molecular representations.
+      Scientific library and command-line tool for traceable molecular
+      fingerprint encoding from user-provided SMILES, with binary, count, and
+      MinHash representations across 10 algorithms.
     </p>
     <div class="ms-actions">
       <a class="md-button md-button--primary" href="usage/#installation">Install</a>
@@ -50,7 +51,7 @@
     <div class="ms-flow__item">
       <span class="ms-flow__kicker">Encode</span>
       <strong>Fingerprint</strong>
-      <small>selected binary bit vectors</small>
+      <small>binary, count, or MinHash</small>
     </div>
     <div class="ms-flow__item">
       <span class="ms-flow__kicker">Trace</span>
@@ -60,7 +61,7 @@
     <div class="ms-flow__item ms-flow__item--artifact">
       <span class="ms-flow__kicker">Output</span>
       <strong>NumPy / CSV / JSON</strong>
-      <small>reproducible artifacts</small>
+      <small>traceable artifacts</small>
     </div>
   </div>
 </section>
@@ -76,7 +77,7 @@
     <article class="ms-card">
       <span class="ms-card__icon">02</span>
       <h3>Encode</h3>
-      <p>Generate the selected binary molecular fingerprint using a
+      <p>Generate the selected molecular fingerprint representation using a
       serializable effective profile.</p>
     </article>
     <article class="ms-card">
@@ -99,8 +100,8 @@
 | MOLRAPTOR does | MOLRAPTOR does not |
 |----------------|-------------------|
 | Accept user-provided SMILES through Python, CSV, or TXT. | Retrieve molecular records from PubChem or other databases. |
-| Parse SMILES with RDKit for fingerprint calculation. | Curate, harmonize, canonicalize, or replace supplied SMILES. |
-| Generate supported binary molecular fingerprints. | Generate labels or activity classes. |
+| Parse SMILES with RDKit for fingerprint calculation. | Retrieve, curate, harmonize, canonicalize, or replace the user-supplied SMILES as an input-preprocessing step. |
+| Generate supported binary, count, and MinHash molecular fingerprint representations. | Generate labels or activity classes. |
 | Record profiles, hashes, versions, and row alignment. | Select or recommend a scientifically preferred fingerprint. |
 | Preserve input order and duplicates. | Train or evaluate machine-learning models. |
 | Isolate invalid individual inputs. | Calculate molecular descriptors or 3D conformations. |
@@ -131,8 +132,8 @@ print(result.fingerprints.shape)
 # (2, 2048)
 ```
 
-Morgan is the default fingerprint and supports configurable settings. Other
-fingerprint types use their fixed effective profiles.
+Morgan is the default fingerprint and supports configurable settings. The
+other nine algorithms use fixed effective profiles.
 
 The in-memory API, file workflow, and command-line interface use the same
 scientific encoding core.
