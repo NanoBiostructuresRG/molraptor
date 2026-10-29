@@ -50,9 +50,9 @@ def test_morgan_fingerprint_api_importable():
 
     assert FingerprintType is FingerprintAlgorithm
     assert FINGERPRINT_TYPES is FINGERPRINT_ALGORITHMS
-    assert len(FINGERPRINT_ALGORITHMS) == 9
+    assert len(FINGERPRINT_ALGORITHMS) == 10
     assert len(FINGERPRINT_REPRESENTATIONS) == 3
-    assert len(ALGORITHM_REPRESENTATIONS) == 9
+    assert len(ALGORITHM_REPRESENTATIONS) == 10
     assert FingerprintRepresentation is not None
     assert FingerprintEncodingResult is not None
     assert FingerprintInputStatus is not None

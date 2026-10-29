@@ -14,6 +14,7 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from rdkit import Chem, DataStructs, __version__ as rdkit_version  # type: ignore
 from rdkit.Chem import MACCSkeys  # type: ignore
+from rdkit.Chem.rdMHFPFingerprint import MHFPEncoder  # type: ignore
 from rdkit.Chem.rdFingerprintGenerator import (  # type: ignore
     GetAtomPairGenerator,
     GetMorganFeatureAtomInvGen,
@@ -38,6 +39,7 @@ FingerprintAlgorithm = Literal[
     "layered",
     "maccs",
     "klekotaroth",
+    "mhfp6",
     "map4",
 ]
 FingerprintRepresentation = Literal["binary", "count", "minhash"]
@@ -51,6 +53,7 @@ FINGERPRINT_ALGORITHMS: tuple[FingerprintAlgorithm, ...] = (
     "layered",
     "maccs",
     "klekotaroth",
+    "mhfp6",
     "map4",
 )
 FINGERPRINT_REPRESENTATIONS: tuple[FingerprintRepresentation, ...] = (
@@ -70,6 +73,7 @@ ALGORITHM_REPRESENTATIONS: Mapping[
         "layered": "binary",
         "maccs": "binary",
         "klekotaroth": "binary",
+        "mhfp6": "minhash",
         "map4": "minhash",
     }
 )
@@ -170,6 +174,20 @@ FINGERPRINT_PARAMETERS: Mapping[
                 "pattern_set": KLEKOTA_ROTH_PATTERN_SET,
                 "pattern_set_sha256": KLEKOTA_ROTH_PATTERN_SET_SHA256,
                 "matching_policy": "rdkit-has-substruct-match",
+            }
+        ),
+        "mhfp6": MappingProxyType(
+            {
+                "fp_size": 2048,
+                "radius": 3,
+                "min_radius": 1,
+                "rings": True,
+                "isomeric": False,
+                "kekulize": False,
+                "seed": 42,
+                "implementation": (
+                    "rdkit.Chem.rdMHFPFingerprint.MHFPEncoder"
+                ),
             }
         ),
         "map4": MappingProxyType(
@@ -499,6 +517,24 @@ def _prepare_fingerprint(
     if algorithm == "klekotaroth":
         return resolved, _get_klekota_roth_fingerprint
 
+    if algorithm == "mhfp6":
+        encoder = MHFPEncoder(
+            resolved.width,
+            cast(int, parameters["seed"]),
+        )
+
+        def encode_mhfp6(molecule: Chem.Mol) -> object:
+            return encoder.EncodeMol(
+                molecule,
+                radius=cast(int, parameters["radius"]),
+                rings=cast(bool, parameters["rings"]),
+                isomeric=cast(bool, parameters["isomeric"]),
+                kekulize=cast(bool, parameters["kekulize"]),
+                min_radius=cast(int, parameters["min_radius"]),
+            )
+
+        return resolved, encode_mhfp6
+
     raise AssertionError(f"Unhandled fingerprint algorithm: {algorithm}")
 
 
@@ -550,7 +586,9 @@ def encode_fingerprints(
             raise TypeError(f"smiles[{index}] must be a string")
 
     matrix_dtype = (
-        np.uint32 if resolved_profile.representation == "count" else np.uint8
+        np.uint8
+        if resolved_profile.representation == "binary"
+        else np.uint32
     )
     rows: list[np.ndarray] = []
     valid_indices: list[int] = []
@@ -574,11 +612,16 @@ def encode_fingerprints(
             continue
 
         fingerprint = encode_molecule(molecule)
-        if resolved_profile.representation == "count":
-            row = np.asarray(fingerprint, dtype=np.uint32)
-        else:
+        if resolved_profile.representation == "binary":
             row = np.zeros(resolved_profile.width, dtype=np.uint8)
             DataStructs.ConvertToNumpyArray(fingerprint, row)
+        else:
+            row = np.asarray(fingerprint, dtype=np.uint32)
+        if row.shape != (resolved_profile.width,):
+            raise RuntimeError(
+                f"{resolved_profile.algorithm} produced shape {row.shape}; "
+                f"expected ({resolved_profile.width},)"
+            )
         fingerprint_index = len(rows)
         rows.append(row)
         valid_indices.append(input_index)

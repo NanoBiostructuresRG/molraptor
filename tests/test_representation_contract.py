@@ -20,6 +20,7 @@ EXPECTED_ALGORITHMS = (
     "layered",
     "maccs",
     "klekotaroth",
+    "mhfp6",
     "map4",
 )
 EXPECTED_REPRESENTATIONS = ("binary", "count", "minhash")
@@ -32,6 +33,7 @@ EXPECTED_ALGORITHM_REPRESENTATIONS = {
     "layered": "binary",
     "maccs": "binary",
     "klekotaroth": "binary",
+    "mhfp6": "minhash",
     "map4": "minhash",
 }
 EXPECTED_RESOLVED_CONTRACTS = (
@@ -43,6 +45,7 @@ EXPECTED_RESOLVED_CONTRACTS = (
     ("layered", "binary", 2048),
     ("maccs", "binary", 167),
     ("klekotaroth", "binary", 4860),
+    ("mhfp6", "minhash", 2048),
     ("map4", "minhash", 1024),
 )
 EXPECTED_REPRESENTATION_SEMANTICS = {
@@ -144,7 +147,7 @@ def test_resolved_profile_declares_representation_semantics(
     representative_algorithm = {
         "binary": "morgan",
         "count": "atompair",
-        "minhash": "map4",
+        "minhash": "mhfp6",
     }[representation]
 
     resolved = fingerprints.resolve_fingerprint_profile(

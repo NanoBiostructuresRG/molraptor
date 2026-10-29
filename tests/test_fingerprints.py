@@ -26,6 +26,7 @@ EXPECTED_WIDTHS = {
     "layered": 2048,
     "maccs": 167,
     "klekotaroth": 4860,
+    "mhfp6": 2048,
 }
 IMPLEMENTED_ALGORITHMS = tuple(EXPECTED_WIDTHS)
 IMPLEMENTED_BINARY_ALGORITHMS = (
@@ -46,6 +47,7 @@ EXPECTED_PROFILE_HASHES = {
     "layered": "ae084c047f65c267995a1483db1605b22701608b0c5b3545029e777fe2dd0a6f",
     "maccs": "fd662cb09e38c85089670d3c7bca885261c04936a326d4b0b7807a9ba104488d",
     "klekotaroth": "1b888c365a2d25e868273d8c3bf13c6e03d73434add2197a4984e1004dd99969",
+    "mhfp6": "0326a002f5996daa9027c3f875c4ad4078d23fb579aa82b8bf9c30340f847ef8",
 }
 
 EXPECTED_ACTIVE_BITS = {
@@ -80,6 +82,7 @@ def test_all_approved_fingerprint_names_are_declared_once():
         "layered",
         "maccs",
         "klekotaroth",
+        "mhfp6",
         "map4",
     )
     assert tuple(FINGERPRINT_PARAMETERS) == FINGERPRINT_TYPES
@@ -93,15 +96,19 @@ def test_declared_parameters_are_read_only():
 @pytest.mark.parametrize("fingerprint_type", IMPLEMENTED_ALGORITHMS)
 def test_resolve_each_fingerprint_profile_without_encoding(fingerprint_type):
     resolved = resolve_fingerprint_profile(fingerprint_type)
-    expected_representation = (
-        "count" if fingerprint_type in {"atompair", "torsion"} else "binary"
+    expected_representation = {
+        "atompair": "count",
+        "torsion": "count",
+        "mhfp6": "minhash",
+    }.get(fingerprint_type, "binary")
+    expected_output_type = {
+        "binary": "binary-bit-vector",
+        "count": "count-vector",
+        "minhash": "minhash-sketch",
+    }[expected_representation]
+    expected_dtype = (
+        "uint8" if expected_representation == "binary" else "uint32"
     )
-    expected_output_type = (
-        "count-vector"
-        if expected_representation == "count"
-        else "binary-bit-vector"
-    )
-    expected_dtype = "uint32" if expected_representation == "count" else "uint8"
 
     assert isinstance(resolved, ResolvedFingerprintProfile)
     assert resolved.fingerprint_type == fingerprint_type
