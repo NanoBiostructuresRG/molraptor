@@ -69,7 +69,17 @@ def test_cli_run_smoke_and_direct_api_equivalence(tmp_path):
 
 @pytest.mark.parametrize(
     "fingerprint_type",
-    ["featmorgan", "atompair", "rdk", "torsion", "layered", "maccs"],
+    [
+        "featmorgan",
+        "atompair",
+        "rdk",
+        "torsion",
+        "layered",
+        "maccs",
+        "klekotaroth",
+        "mhfp6",
+        "map4",
+    ],
 )
 def test_cli_runs_each_fixed_fingerprint_end_to_end(
     tmp_path,

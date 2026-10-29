@@ -275,24 +275,56 @@ def test_invalid_profile_is_rejected_before_outputs(tmp_path, profile_kwargs):
     _assert_no_artifacts(output_dir)
 
 
-def test_non_morgan_workflow_preserves_artifacts_and_records_profile(tmp_path):
+@pytest.mark.parametrize(
+    (
+        "fingerprint_type",
+        "representation",
+        "output_type",
+        "width",
+        "dtype",
+    ),
+    [
+        ("klekotaroth", "binary", "binary-bit-vector", 4860, np.uint8),
+        ("atompair", "count", "count-vector", 2048, np.uint32),
+        ("map4", "minhash", "minhash-sketch", 1024, np.uint32),
+    ],
+)
+def test_representation_workflows_persist_matrix_metadata_and_artifacts(
+    tmp_path,
+    fingerprint_type,
+    representation,
+    output_type,
+    width,
+    dtype,
+):
     input_path = tmp_path / "molecules.txt"
-    input_path.write_text("CCO\ninvalid\nCC\n", encoding="utf-8")
+    input_path.write_text("CCO\nCC\n", encoding="utf-8")
     output_dir = tmp_path / "outputs"
 
     result = FingerprintStep(
         _config(
             input_path,
             output_dir,
-            fingerprint_type="maccs",
+            fingerprint_type=fingerprint_type,
         )
     ).run()
 
-    assert result.fingerprints.shape == (2, 167)
     assert {path.name for path in output_dir.iterdir()} == set(OUTPUT_FILENAMES)
+    matrix = np.load(output_dir / "fingerprints.npy", allow_pickle=False)
+    np.testing.assert_array_equal(matrix, result.fingerprints)
+    assert matrix.shape == result.matrix_shape
+    assert matrix.dtype == dtype
+
     metadata = json.loads(
         (output_dir / "encoding_metadata.json").read_text("utf-8")
     )
-    assert metadata["profile"]["algorithm"] == "maccs"
-    assert metadata["profile"]["fp_size"] == 167
-    assert metadata["matrix_shape"] == [2, 167]
+    assert metadata["profile"] == result.profile
+    assert metadata["profile_hash"] == result.profile_hash
+    assert metadata["matrix_shape"] == list(result.matrix_shape)
+    assert metadata["matrix_dtype"] == result.matrix_dtype
+    assert metadata["profile"]["profile_schema_version"] == "2.0"
+    assert metadata["profile"]["algorithm"] == fingerprint_type
+    assert metadata["profile"]["representation"] == representation
+    assert metadata["profile"]["output_type"] == output_type
+    assert metadata["profile"]["dtype"] == np.dtype(dtype).name
+    assert metadata["profile"]["fp_size"] == width
