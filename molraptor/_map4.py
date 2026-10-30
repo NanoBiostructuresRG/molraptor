@@ -61,8 +61,6 @@ def _get_map4_shingles(molecule: Chem.Mol, radius: int = 2) -> list[str]:
                     atom_environments[second][radius_index],
                 )
             )
-            shingles.add(
-                f"{environments[0]}|{distance}|{environments[1]}"
-            )
+            shingles.add(f"{environments[0]}|{distance}|{environments[1]}")
 
     return sorted(shingles)

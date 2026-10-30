@@ -67,9 +67,7 @@ def test_csv_uses_exact_configured_smiles_column(tmp_path, column_name):
     ]
     assert result.valid_indices == (0, 1, 2)
     np.testing.assert_array_equal(result.fingerprints[0], result.fingerprints[2])
-    metadata = json.loads(
-        (output_dir / "encoding_metadata.json").read_text("utf-8")
-    )
+    metadata = json.loads((output_dir / "encoding_metadata.json").read_text("utf-8"))
     assert metadata["source_file_name"] == "molecules.csv"
     assert metadata["input_format"] == "csv"
     assert metadata["smiles_column"] == column_name
@@ -80,9 +78,7 @@ def test_csv_empty_cell_is_preserved_as_an_empty_input(tmp_path):
     input_path = tmp_path / "molecules.csv"
     input_path.write_text("SMILES\nCCO\n\nCC\n", encoding="utf-8")
 
-    result = FingerprintStep(
-        _config(input_path, tmp_path / "outputs")
-    ).run()
+    result = FingerprintStep(_config(input_path, tmp_path / "outputs")).run()
 
     assert [status.input_smiles for status in result.input_statuses] == [
         "CCO",
@@ -97,9 +93,7 @@ def test_txt_removes_only_line_endings_and_preserves_every_input(tmp_path):
     input_path = tmp_path / "molecules.txt"
     input_path.write_bytes(b"CCO\r\nCCO\n\n CCO \nnot-a-smiles")
 
-    result = FingerprintStep(
-        _config(input_path, tmp_path / "outputs")
-    ).run()
+    result = FingerprintStep(_config(input_path, tmp_path / "outputs")).run()
 
     assert [status.input_smiles for status in result.input_statuses] == [
         "CCO",
@@ -132,17 +126,13 @@ def test_mixed_batch_writes_exact_traceable_output_contract(tmp_path):
         include_chirality=True,
     )
 
-    result = FingerprintStep(
-        _config(input_path, output_dir, profile=profile)
-    ).run()
+    result = FingerprintStep(_config(input_path, output_dir, profile=profile)).run()
 
     assert {path.name for path in output_dir.iterdir()} == set(OUTPUT_FILENAMES)
     assert not (output_dir / "labels.npy").exists()
 
     npy_matrix = np.load(output_dir / "fingerprints.npy", allow_pickle=False)
-    csv_matrix = pd.read_csv(output_dir / "fingerprints.csv").to_numpy(
-        dtype=np.uint8
-    )
+    csv_matrix = pd.read_csv(output_dir / "fingerprints.csv").to_numpy(dtype=np.uint8)
     np.testing.assert_array_equal(npy_matrix, result.fingerprints)
     np.testing.assert_array_equal(csv_matrix, result.fingerprints)
     assert npy_matrix.dtype == np.uint8
@@ -255,9 +245,7 @@ def test_unreadable_input_writes_no_artifacts(tmp_path):
     output_dir = tmp_path / "outputs"
 
     with pytest.raises(ValueError, match="Unable to read CSV input"):
-        FingerprintStep(
-            _config(tmp_path / "missing.csv", output_dir)
-        ).run()
+        FingerprintStep(_config(tmp_path / "missing.csv", output_dir)).run()
 
     _assert_no_artifacts(output_dir)
 
@@ -315,9 +303,7 @@ def test_representation_workflows_persist_matrix_metadata_and_artifacts(
     assert matrix.shape == result.matrix_shape
     assert matrix.dtype == dtype
 
-    metadata = json.loads(
-        (output_dir / "encoding_metadata.json").read_text("utf-8")
-    )
+    metadata = json.loads((output_dir / "encoding_metadata.json").read_text("utf-8"))
     assert metadata["profile"] == result.profile
     assert metadata["profile_hash"] == result.profile_hash
     assert metadata["matrix_shape"] == list(result.matrix_shape)

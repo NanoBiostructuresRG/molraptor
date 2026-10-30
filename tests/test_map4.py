@@ -60,9 +60,7 @@ EXPECTED_PROFILE_HASH = (
 )
 EXPECTED_REGRESSION_EVIDENCE = {
     "CCCC": {
-        "sha256": (
-            "41ad417032253e61c2505372b7426493aad93a9f234dc4d1ab20def24ad7edd4"
-        ),
+        "sha256": ("41ad417032253e61c2505372b7426493aad93a9f234dc4d1ab20def24ad7edd4"),
         "first10": [
             956313146,
             599483974,
@@ -89,9 +87,7 @@ EXPECTED_REGRESSION_EVIDENCE = {
         ],
     },
     "CCO": {
-        "sha256": (
-            "97fe80622307bee3951d704a2391e99e1dec0d3e84b9ea5ca1bd7d2a2534fe08"
-        ),
+        "sha256": ("97fe80622307bee3951d704a2391e99e1dec0d3e84b9ea5ca1bd7d2a2534fe08"),
         "first10": [
             176029306,
             514704511,
@@ -118,9 +114,7 @@ EXPECTED_REGRESSION_EVIDENCE = {
         ],
     },
     "c1ccccc1": {
-        "sha256": (
-            "0af90a4119f83530fe4a0db47eb653ce207aa783d8cbb148de664b818fcb46b7"
-        ),
+        "sha256": ("0af90a4119f83530fe4a0db47eb653ce207aa783d8cbb148de664b818fcb46b7"),
         "first10": [
             369947857,
             452314680,
@@ -154,9 +148,7 @@ def _direct_rdkit_rows(smiles=REFERENCE_SMILES):
     return np.vstack(
         [
             np.asarray(
-                encoder.FromStringArray(
-                    _get_map4_shingles(Chem.MolFromSmiles(value))
-                ),
+                encoder.FromStringArray(_get_map4_shingles(Chem.MolFromSmiles(value))),
                 dtype=np.uint32,
             )
             for value in smiles
@@ -207,9 +199,10 @@ def test_map4_frozen_regression_evidence_matches_direct_backend():
 
     for smiles, row in zip(REFERENCE_SMILES, rows, strict=True):
         evidence = EXPECTED_REGRESSION_EVIDENCE[smiles]
-        assert hashlib.sha256(
-            np.ascontiguousarray(row).tobytes()
-        ).hexdigest() == evidence["sha256"]
+        assert (
+            hashlib.sha256(np.ascontiguousarray(row).tobytes()).hexdigest()
+            == evidence["sha256"]
+        )
         assert row[:10].tolist() == evidence["first10"]
         assert row[-10:].tolist() == evidence["last10"]
 

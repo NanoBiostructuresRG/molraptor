@@ -6,13 +6,20 @@ from __future__ import annotations
 import argparse
 from collections.abc import Sequence
 from pathlib import Path
+from typing import TypedDict
 
 from pydantic import ValidationError
 
-from .config import MolraptorConfig
-from .fingerprints import FINGERPRINT_TYPES, MorganFingerprintProfile
-from .pipeline import run
-from .version import __version__
+from molraptor.config import MolraptorConfig
+from molraptor.fingerprints import FINGERPRINT_TYPES, MorganFingerprintProfile
+from molraptor.pipeline import run
+from molraptor.version import __version__
+
+
+class _MorganProfileOverrides(TypedDict, total=False):
+    radius: int
+    fp_size: int
+    include_chirality: bool
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -87,7 +94,7 @@ def _run(args: argparse.Namespace) -> None:
 
     profile = None
     if args.fingerprint == "morgan":
-        profile_kwargs: dict[str, int | bool] = {}
+        profile_kwargs: _MorganProfileOverrides = {}
         if args.radius is not None:
             profile_kwargs["radius"] = args.radius
         if args.fp_size is not None:

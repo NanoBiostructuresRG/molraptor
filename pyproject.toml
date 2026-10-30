@@ -47,6 +47,8 @@ dev = [
     "build>=1.0",
     "hatchling>=1.18",
     "twine>=7.0",
+    "ruff==0.16.4",
+    "mypy==2.3.1",
 ]
 docs = [
     "mkdocs>=1.6",
@@ -103,3 +105,26 @@ exclude = [
 testpaths = ["tests"]
 tmp_path_retention_count = 0
 tmp_path_retention_policy = "none"
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E9", "F", "BLE001", "TID252"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.per-file-ignores]
+# __init__.py is the package facade; explicit-relative imports make its local
+# public re-exports deliberate and avoid self-qualified facade imports.
+"molraptor/__init__.py" = ["TID252"]
+
+[tool.mypy]
+python_version = "3.11"
+disable_error_code = ["import-untyped"]
+follow_imports_for_stubs = true
+
+[[tool.mypy.overrides]]
+module = ["rdkit", "rdkit.*"]
+follow_imports = "skip"

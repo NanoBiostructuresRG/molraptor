@@ -7,7 +7,7 @@ from typing import Iterable
 
 import pandas as pd
 
-from .fingerprints import _smiles_is_valid
+from molraptor.fingerprints import _smiles_is_valid
 
 
 class DataValidator:

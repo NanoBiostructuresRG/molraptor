@@ -25,6 +25,8 @@ EXPECTED_COUNT_GOLDENS = {
         ([1539], [6], 6, 6),
     ),
 }
+
+
 def _reference_count_generator(algorithm):
     if algorithm == "atompair":
         return GetAtomPairGenerator(

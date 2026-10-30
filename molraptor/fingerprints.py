@@ -22,13 +22,13 @@ from rdkit.Chem.rdFingerprintGenerator import (  # type: ignore
     GetTopologicalTorsionGenerator,
 )
 
-from ._klekota_roth import (
+from molraptor._klekota_roth import (
     KLEKOTA_ROTH_PATTERN_SET,
     KLEKOTA_ROTH_PATTERN_SET_SHA256,
     _get_klekota_roth_fingerprint,
 )
-from ._map4 import _get_map4_shingles
-from .version import __version__
+from molraptor._map4 import _get_map4_shingles
+from molraptor.version import __version__
 
 
 FingerprintAlgorithm = Literal[
@@ -62,41 +62,41 @@ FINGERPRINT_REPRESENTATIONS: tuple[FingerprintRepresentation, ...] = (
     "count",
     "minhash",
 )
-ALGORITHM_REPRESENTATIONS: Mapping[
-    FingerprintAlgorithm, FingerprintRepresentation
-] = MappingProxyType(
-    {
-        "morgan": "binary",
-        "featmorgan": "binary",
-        "atompair": "count",
-        "rdk": "binary",
-        "torsion": "count",
-        "layered": "binary",
-        "maccs": "binary",
-        "klekotaroth": "binary",
-        "mhfp6": "minhash",
-        "map4": "minhash",
-    }
+ALGORITHM_REPRESENTATIONS: Mapping[FingerprintAlgorithm, FingerprintRepresentation] = (
+    MappingProxyType(
+        {
+            "morgan": "binary",
+            "featmorgan": "binary",
+            "atompair": "count",
+            "rdk": "binary",
+            "torsion": "count",
+            "layered": "binary",
+            "maccs": "binary",
+            "klekotaroth": "binary",
+            "mhfp6": "minhash",
+            "map4": "minhash",
+        }
+    )
 )
 
 # v0.4 compatibility names are aliases, not independent semantic registries.
 FingerprintType = FingerprintAlgorithm
 FINGERPRINT_TYPES = FINGERPRINT_ALGORITHMS
 
-_REPRESENTATION_SEMANTICS: Mapping[
-    FingerprintRepresentation, Mapping[str, str]
-] = MappingProxyType(
-    {
-        "binary": MappingProxyType(
-            {"output_type": "binary-bit-vector", "dtype": "uint8"}
-        ),
-        "count": MappingProxyType(
-            {"output_type": "count-vector", "dtype": "uint32"}
-        ),
-        "minhash": MappingProxyType(
-            {"output_type": "minhash-sketch", "dtype": "uint32"}
-        ),
-    }
+_REPRESENTATION_SEMANTICS: Mapping[FingerprintRepresentation, Mapping[str, str]] = (
+    MappingProxyType(
+        {
+            "binary": MappingProxyType(
+                {"output_type": "binary-bit-vector", "dtype": "uint8"}
+            ),
+            "count": MappingProxyType(
+                {"output_type": "count-vector", "dtype": "uint32"}
+            ),
+            "minhash": MappingProxyType(
+                {"output_type": "minhash-sketch", "dtype": "uint32"}
+            ),
+        }
+    )
 )
 FingerprintParameterValue = str | int | bool
 SerializedProfile = dict[str, FingerprintParameterValue]
@@ -186,9 +186,7 @@ FINGERPRINT_PARAMETERS: Mapping[
                 "isomeric": False,
                 "kekulize": False,
                 "seed": 42,
-                "implementation": (
-                    "rdkit.Chem.rdMHFPFingerprint.MHFPEncoder"
-                ),
+                "implementation": ("rdkit.Chem.rdMHFPFingerprint.MHFPEncoder"),
             }
         ),
         "map4": MappingProxyType(
@@ -198,12 +196,8 @@ FINGERPRINT_PARAMETERS: Mapping[
                 "include_chirality": False,
                 "include_duplicate_shingles": False,
                 "seed": 42,
-                "shingle_policy": (
-                    "map4-atom-pair-circular-environment"
-                ),
-                "minhash_backend": (
-                    "rdkit.Chem.rdMHFPFingerprint.MHFPEncoder"
-                ),
+                "shingle_policy": ("map4-atom-pair-circular-environment"),
+                "minhash_backend": ("rdkit.Chem.rdMHFPFingerprint.MHFPEncoder"),
             }
         ),
     }
@@ -309,9 +303,7 @@ class FingerprintInputStatus(BaseModel):
             if self.fingerprint_index is None:
                 raise ValueError("valid input status requires fingerprint_index")
             if self.invalid_reason is not None:
-                raise ValueError(
-                    "valid input status cannot include an invalid_reason"
-                )
+                raise ValueError("valid input status cannot include an invalid_reason")
         else:
             if self.invalid_reason is None:
                 raise ValueError("invalid input status requires an invalid_reason")
@@ -445,9 +437,7 @@ def _prepare_fingerprint(
             fpSize=resolved.width,
             includeChirality=cast(bool, parameters["include_chirality"]),
             useBondTypes=cast(bool, parameters["use_bond_types"]),
-            includeRingMembership=cast(
-                bool, parameters["include_ring_membership"]
-            ),
+            includeRingMembership=cast(bool, parameters["include_ring_membership"]),
             includeRedundantEnvironments=(
                 cast(bool, parameters["include_redundant_environments"])
             ),
@@ -460,9 +450,7 @@ def _prepare_fingerprint(
             fpSize=resolved.width,
             includeChirality=cast(bool, parameters["include_chirality"]),
             useBondTypes=cast(bool, parameters["use_bond_types"]),
-            includeRingMembership=cast(
-                bool, parameters["include_ring_membership"]
-            ),
+            includeRingMembership=cast(bool, parameters["include_ring_membership"]),
             includeRedundantEnvironments=cast(
                 bool, parameters["include_redundant_environments"]
             ),
@@ -481,6 +469,7 @@ def _prepare_fingerprint(
         return resolved, generator.GetCountFingerprintAsNumPy
 
     if algorithm == "rdk":
+
         def encode_rdk(molecule: Chem.Mol) -> object:
             return Chem.RDKFingerprint(
                 molecule,
@@ -504,6 +493,7 @@ def _prepare_fingerprint(
         return resolved, generator.GetCountFingerprintAsNumPy
 
     if algorithm == "layered":
+
         def encode_layered(molecule: Chem.Mol) -> object:
             return Chem.LayeredFingerprint(
                 molecule,
@@ -590,9 +580,7 @@ def encode_fingerprints(
     """
 
     if isinstance(smiles, (str, bytes)):
-        raise TypeError(
-            "smiles must be an ordered sequence of strings, not a string"
-        )
+        raise TypeError("smiles must be an ordered sequence of strings, not a string")
     if not isinstance(smiles, Sequence):
         raise TypeError("smiles must be an ordered sequence of strings")
 
@@ -606,9 +594,7 @@ def encode_fingerprints(
             raise TypeError(f"smiles[{index}] must be a string")
 
     matrix_dtype = (
-        np.uint8
-        if resolved_profile.representation == "binary"
-        else np.uint32
+        np.uint8 if resolved_profile.representation == "binary" else np.uint32
     )
     rows: list[np.ndarray] = []
     valid_indices: list[int] = []

@@ -40,13 +40,10 @@ def _load_klekota_roth_patterns() -> tuple[Chem.Mol, ...]:
             f"{KLEKOTA_ROTH_PATTERN_COUNT} nonempty SMARTS patterns"
         )
 
-    pattern_set_sha256 = hashlib.sha256(
-        "\n".join(patterns).encode("utf-8")
-    ).hexdigest()
+    pattern_set_sha256 = hashlib.sha256("\n".join(patterns).encode("utf-8")).hexdigest()
     if pattern_set_sha256 != KLEKOTA_ROTH_PATTERN_SET_SHA256:
         raise RuntimeError(
-            "Bundled Klekota-Roth definition has an unexpected ordered-pattern "
-            "SHA256"
+            "Bundled Klekota-Roth definition has an unexpected ordered-pattern SHA256"
         )
 
     compiled_patterns: list[Chem.Mol] = []

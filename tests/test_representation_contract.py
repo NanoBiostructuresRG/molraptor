@@ -53,6 +53,8 @@ EXPECTED_REPRESENTATION_SEMANTICS = {
     "count": ("count-vector", "uint32"),
     "minhash": ("minhash-sketch", "uint32"),
 }
+
+
 def test_v050_contract_names_are_public():
     required_names = {
         "FingerprintAlgorithm",
@@ -124,12 +126,14 @@ def test_algorithm_resolves_to_its_single_representation(
 
 
 def test_representation_is_not_a_public_function_parameter():
-    assert "representation" not in inspect.signature(
-        fingerprints.resolve_fingerprint_profile
-    ).parameters
-    assert "representation" not in inspect.signature(
-        fingerprints.encode_fingerprints
-    ).parameters
+    assert (
+        "representation"
+        not in inspect.signature(fingerprints.resolve_fingerprint_profile).parameters
+    )
+    assert (
+        "representation"
+        not in inspect.signature(fingerprints.encode_fingerprints).parameters
+    )
 
 
 @pytest.mark.parametrize(

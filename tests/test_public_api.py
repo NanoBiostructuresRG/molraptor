@@ -8,26 +8,31 @@ import molraptor
 
 def test_version_importable():
     from molraptor import __version__
+
     assert isinstance(__version__, str)
 
 
 def test_config_importable():
     from molraptor import MolraptorConfig
+
     assert MolraptorConfig is not None
 
 
 def test_run_importable():
     from molraptor import run
+
     assert callable(run)
 
 
 def test_validate_config_importable():
     from molraptor import validate_config
+
     assert callable(validate_config)
 
 
 def test_data_validator_importable():
     from molraptor import DataValidator
+
     assert DataValidator is not None
 
 

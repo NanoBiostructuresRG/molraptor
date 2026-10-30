@@ -25,9 +25,9 @@ def test_cli_version(capsys):
 
 def test_cli_run_smoke_and_direct_api_equivalence(tmp_path):
     input_path = tmp_path / "molecules.csv"
-    pd.DataFrame(
-        {"SMILES_Harmonized": ["CCO", "invalid", "CC"]}
-    ).to_csv(input_path, index=False)
+    pd.DataFrame({"SMILES_Harmonized": ["CCO", "invalid", "CC"]}).to_csv(
+        input_path, index=False
+    )
     output_dir = tmp_path / "outputs"
 
     assert workflow_module.encode_fingerprints is encode_fingerprints

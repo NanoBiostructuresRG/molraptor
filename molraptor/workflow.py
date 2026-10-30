@@ -17,8 +17,8 @@ from tempfile import TemporaryDirectory
 import numpy as np
 import pandas as pd
 
-from .config import MolraptorConfig
-from .fingerprints import FingerprintEncodingResult, encode_fingerprints
+from molraptor.config import MolraptorConfig
+from molraptor.fingerprints import FingerprintEncodingResult, encode_fingerprints
 
 
 OUTPUT_FILENAMES = (
@@ -77,8 +77,7 @@ def _read_smiles(path: Path, smiles_column: str) -> list[str]:
     if suffix == ".txt":
         return _read_txt_smiles(path)
     raise ValueError(
-        f"Unsupported input format '{path.suffix or '<none>'}'; "
-        "expected .csv or .txt"
+        f"Unsupported input format '{path.suffix or '<none>'}'; expected .csv or .txt"
     )
 
 
@@ -99,9 +98,7 @@ def _write_outputs(
     metadata = {
         "source_file_name": config.input_path.name,
         "input_format": input_format,
-        "smiles_column": (
-            config.smiles_column if input_format == "csv" else None
-        ),
+        "smiles_column": (config.smiles_column if input_format == "csv" else None),
         "input_count": len(result.input_statuses),
         **result.serialize_metadata(),
     }

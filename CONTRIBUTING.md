@@ -1,6 +1,8 @@
 # Contributing to MOLRAPTOR
 
-Thank you for your interest in contributing to MOLRAPTOR.This project is maintained by the [Nano and Biostructures Research Group](https://nanobiostructuresrg.github.io/) at Tecnológico de Monterrey.
+Thank you for your interest in contributing to MOLRAPTOR.
+
+This project is maintained by the [Nano and Biostructures Research Group](https://nanobiostructuresrg.github.io/) at Tecnológico de Monterrey.
 
 By participating in this project, you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
@@ -57,30 +59,28 @@ python -m pip install -e ".[dev,docs]"
 
 ## Validation
 
-Run the test suite:
+Before submitting a pull request, run:
 
 ```bash
+python -m ruff check molraptor tests
+python -m ruff format --check molraptor tests
+python -m mypy molraptor
 python -m pytest tests -q
-```
-
-Build the documentation in strict mode:
-
-```bash
 mkdocs build --strict
 ```
 
-Build and validate the package distributions when packaging or release-related files change:
+For packaging-related changes, also run:
 
 ```bash
 python -m build
 python -m twine check dist/*
 ```
 
-The GitHub Actions workflow provides the final CI validation for supported Python versions and documentation builds.
+GitHub Actions performs the final validation across the supported Python versions and documentation build.
 
 ## Code style
 
-Follow [PEP 8](https://peps.python.org/pep-0008/) and the style already used in the surrounding code.
+Follow [PEP 8](https://peps.python.org/pep-0008/), the configured Ruff checks, and the style already used in the surrounding code.
 
 Keep changes focused and avoid unrelated refactoring within the same pull request.
 

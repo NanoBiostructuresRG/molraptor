@@ -31,9 +31,7 @@ EXPECTED_PROFILE_HASH = (
 )
 EXPECTED_REGRESSION_EVIDENCE = {
     "CCCC": {
-        "sha256": (
-            "0df6e8d2b1d1605bfef93c6bb53d7694549459e8fa1fcb41bce74728f6e15411"
-        ),
+        "sha256": ("0df6e8d2b1d1605bfef93c6bb53d7694549459e8fa1fcb41bce74728f6e15411"),
         "first10": [
             1509692179,
             113829445,
@@ -60,9 +58,7 @@ EXPECTED_REGRESSION_EVIDENCE = {
         ],
     },
     "CCO": {
-        "sha256": (
-            "a9363d3a1d966e4b5af8d81c417b8d4f12746247b68977874ecf23586df2adaa"
-        ),
+        "sha256": ("a9363d3a1d966e4b5af8d81c417b8d4f12746247b68977874ecf23586df2adaa"),
         "first10": [
             998603975,
             113829445,
@@ -89,9 +85,7 @@ EXPECTED_REGRESSION_EVIDENCE = {
         ],
     },
     "c1ccccc1": {
-        "sha256": (
-            "e2cdbcef4e57c01b6f69cdfce04e2d500216adecff6a6f2f2efa57cda5f6a564"
-        ),
+        "sha256": ("e2cdbcef4e57c01b6f69cdfce04e2d500216adecff6a6f2f2efa57cda5f6a564"),
         "first10": [
             36322170,
             1882680715,
@@ -173,9 +167,10 @@ def test_mhfp6_frozen_regression_evidence_matches_direct_backend():
 
     for smiles, row in zip(REFERENCE_SMILES, rows, strict=True):
         evidence = EXPECTED_REGRESSION_EVIDENCE[smiles]
-        assert hashlib.sha256(
-            np.ascontiguousarray(row).tobytes()
-        ).hexdigest() == evidence["sha256"]
+        assert (
+            hashlib.sha256(np.ascontiguousarray(row).tobytes()).hexdigest()
+            == evidence["sha256"]
+        )
         assert row[:10].tolist() == evidence["first10"]
         assert row[-10:].tolist() == evidence["last10"]
 
