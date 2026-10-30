@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.0] - 2026-10-29
+
+### Added
+
+- Explicit fingerprint algorithm and representation contracts.
+- Binary, count, and MinHash representation semantics.
+- Klekota–Roth fingerprint support.
+- MHFP6 MinHash fingerprint support.
+- MAP4 MinHash fingerprint support.
+- Public algorithm and representation registries.
+
+### Changed
+
+- Atom Pair now uses a count representation.
+- Topological Torsion now uses a count representation.
+- Effective profiles now identify representation, output type, dtype, width,
+  and algorithm-specific settings.
+- CLI/config/workflow integration now supports all 10 approved algorithms.
+- Persisted metadata distinguishes binary, count, and MinHash encodings.
+
+### Validation
+
+- Klekota–Roth uses the frozen ordered 4860-pattern definition.
+- MHFP6 was validated against direct RDKit output for the frozen reference
+  cases.
+- MAP4 MinHash output was validated against the verified TMAP/RDKit reference
+  cases used during v0.5 development.
+- CLI/config integration covers all 10 algorithms.
+- Workflow persistence was validated for binary, count, and MinHash
+  representations.
+
+---
+
 ## [0.4.1] - 2026-07-26
 
 ### Added
@@ -178,6 +211,7 @@ symbols.
 
 ---
 
+[0.5.0]: https://github.com/NanoBiostructuresRG/molraptor/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/NanoBiostructuresRG/molraptor/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/NanoBiostructuresRG/molraptor/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/NanoBiostructuresRG/molraptor/compare/v0.2.0...v0.3.0

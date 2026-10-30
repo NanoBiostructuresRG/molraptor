@@ -46,14 +46,32 @@ def test_config_rejects_unknown_fields(tmp_path):
         )
 
 
-def test_config_accepts_fixed_non_morgan_fingerprint(tmp_path):
+@pytest.mark.parametrize(
+    "fingerprint_type",
+    [
+        "morgan",
+        "featmorgan",
+        "atompair",
+        "rdk",
+        "torsion",
+        "layered",
+        "maccs",
+        "klekotaroth",
+        "mhfp6",
+        "map4",
+    ],
+)
+def test_config_accepts_each_approved_fingerprint(tmp_path, fingerprint_type):
     config = MolraptorConfig(
         input_path=tmp_path / "molecules.csv",
-        fingerprint_type="maccs",
+        fingerprint_type=fingerprint_type,
     )
 
-    assert config.fingerprint_type == "maccs"
-    assert config.profile is None
+    assert config.fingerprint_type == fingerprint_type
+    if fingerprint_type == "morgan":
+        assert config.profile == MorganFingerprintProfile()
+    else:
+        assert config.profile is None
 
 
 def test_config_rejects_morgan_profile_for_other_fingerprint(tmp_path):
@@ -62,4 +80,12 @@ def test_config_rejects_morgan_profile_for_other_fingerprint(tmp_path):
             input_path=tmp_path / "molecules.csv",
             fingerprint_type="maccs",
             profile=MorganFingerprintProfile(),
+        )
+
+
+def test_config_rejects_unknown_fingerprint(tmp_path):
+    with pytest.raises(ValidationError):
+        MolraptorConfig(
+            input_path=tmp_path / "molecules.csv",
+            fingerprint_type="unknown",
         )

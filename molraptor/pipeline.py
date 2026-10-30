@@ -3,9 +3,9 @@
 
 from __future__ import annotations
 
-from .config import MolraptorConfig
-from .workflow import FingerprintStep
-from .fingerprints import FingerprintEncodingResult
+from molraptor.config import MolraptorConfig
+from molraptor.workflow import FingerprintStep
+from molraptor.fingerprints import FingerprintEncodingResult
 
 
 def validate_config(config: MolraptorConfig) -> MolraptorConfig:

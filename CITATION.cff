@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 type: software
 title: "MOLRAPTOR: Molecular Fingerprint Rapid Generator"
-version: "0.4.1"
-date-released: "2026-07-26"
+version: "0.5.0"
+date-released: "2026-10-29"
 authors:
   - family-names: "Contreras-Torres"
     given-names: "Flavio F."
@@ -12,15 +12,14 @@ authors:
 repository-code: "https://github.com/NanoBiostructuresRG/molraptor"
 license: "LGPL-3.0-or-later"
 abstract: >-
-  MOLRAPTOR is an open-source cheminformatics software package with a Python API
-  and command-line interface for reproducible, SMILES-first generation of binary
-  molecular fingerprints. It supports Morgan, Feature Morgan, Atom Pair,
-  RDKit topological, Topological Torsion, Layered, and MACCS fingerprints
-  through in-memory encoding and CSV/TXT workflows. It preserves input order
-  and duplicates, isolates invalid records, and records deterministic input
-  and profile hashes with runtime metadata. MOLRAPTOR parses supplied SMILES
-  with RDKit but does not retrieve, curate, harmonize, canonicalize, or replace
-  them.
+  MOLRAPTOR is an open-source cheminformatics package providing a Python API
+  and CLI for SMILES-first molecular fingerprint encoding. It supports 10
+  fingerprint algorithms with binary, count, and MinHash representations.
+  Morgan is configurable, while the other nine algorithms use fixed effective
+  profiles. Input order and duplicates are preserved, invalid records remain
+  traceable, and effective profiles, runtime versions, input hashes, and
+  profile hashes are recorded. MOLRAPTOR does not retrieve, curate, harmonize,
+  or replace supplied SMILES.
 keywords:
   - cheminformatics
   - molecular fingerprints
