@@ -2,7 +2,7 @@
 
 <section class="ms-hero">
   <div class="ms-hero__content">
-    <p class="ms-eyebrow">SMILES-first fingerprinting</p>
+    <p class="ms-eyebrow">Traceable molecular fingerprint encoding</p>
     <div class="ms-brand" aria-label="MOLRAPTOR">
       <span class="ms-dotmark" aria-hidden="true">
         <span></span><span></span><span></span>
@@ -12,12 +12,13 @@
       <span class="ms-wordmark">MOLRAPTOR</span>
     </div>
     <p class="ms-subtitle">
-      Scientific library and command-line tool for traceable molecular
-      fingerprint encoding from user-provided SMILES, with binary, count, and
-      MinHash representations across 10 algorithms.
+      Documentation for molecular fingerprint encoding from ordered,
+      user-provided SMILES. MOLRAPTOR connects each numerical representation
+      to its source inputs, fingerprint algorithm, effective encoding profile,
+      and input-to-output correspondence.
     </p>
     <div class="ms-actions">
-      <a class="md-button md-button--primary" href="usage/#installation">Install</a>
+      <a class="md-button md-button--primary" href="usage/">Get started</a>
       <a class="md-button" href="api/">API Reference</a>
       <a class="md-button" href="changelog/">Changelog</a>
     </div>
@@ -34,126 +35,133 @@
     MOLRAPTOR is currently in alpha-stage development. Public APIs may change
     before 1.0.
 
-## Workflow
+## Conceptual Model
 
-<section class="ms-workflow" aria-label="MOLRAPTOR workflow">
+MOLRAPTOR treats fingerprint generation as more than a matrix transformation.
+An encoding result is interpreted through the relationship between the
+molecular input, the selected algorithm, its representation semantics, the
+effective encoding profile, and the resulting numerical matrix.
+
+<section class="ms-workflow" aria-label="MOLRAPTOR conceptual model">
   <div class="ms-flow">
     <div class="ms-flow__item">
       <span class="ms-flow__kicker">Input</span>
-      <strong>Python / CSV / TXT</strong>
-      <small>user-provided SMILES</small>
+      <strong>Ordered SMILES</strong>
+      <small>source identity</small>
     </div>
     <div class="ms-flow__item">
-      <span class="ms-flow__kicker">Parse</span>
-      <strong>RDKit</strong>
-      <small>molecular graph construction</small>
-    </div>
-    <div class="ms-flow__item">
-      <span class="ms-flow__kicker">Encode</span>
+      <span class="ms-flow__kicker">Algorithm</span>
       <strong>Fingerprint</strong>
-      <small>binary, count, or MinHash</small>
+      <small>one algorithm per execution</small>
     </div>
     <div class="ms-flow__item">
-      <span class="ms-flow__kicker">Trace</span>
-      <strong>Status + hashes</strong>
-      <small>alignment and provenance</small>
+      <span class="ms-flow__kicker">Representation</span>
+      <strong>Binary / Count / MinHash</strong>
+      <small>algorithm-defined semantics</small>
+    </div>
+    <div class="ms-flow__item">
+      <span class="ms-flow__kicker">Profile</span>
+      <strong>Effective settings</strong>
+      <small>explicit encoding configuration</small>
     </div>
     <div class="ms-flow__item ms-flow__item--artifact">
-      <span class="ms-flow__kicker">Output</span>
-      <strong>NumPy / CSV / JSON</strong>
-      <small>traceable artifacts</small>
+      <span class="ms-flow__kicker">Result</span>
+      <strong>Matrix + metadata</strong>
+      <small>numerical representation and correspondence</small>
     </div>
   </div>
 </section>
+
+The fingerprint algorithm determines the representation class. MOLRAPTOR does
+not expose a separate representation selector.
+
+Morgan uses a configurable effective profile. The other nine supported
+algorithms use fixed effective profiles in v0.5.0.
+
+## What MOLRAPTOR Preserves
 
 <section class="ms-panel">
   <div class="ms-grid ms-grid--four">
     <article class="ms-card">
       <span class="ms-card__icon">01</span>
-      <h3>Supply</h3>
-      <p>Provide ordered SMILES directly through Python or from a CSV or
-      UTF-8 TXT file.</p>
+      <h3>Input identity</h3>
+      <p>
+        Preserve the supplied strings, their order, duplicates, and the
+        distinction between valid and invalid inputs.
+      </p>
     </article>
     <article class="ms-card">
       <span class="ms-card__icon">02</span>
-      <h3>Encode</h3>
-      <p>Generate the selected molecular fingerprint representation using a
-      serializable effective profile.</p>
+      <h3>Encoding identity</h3>
+      <p>
+        Record the selected fingerprint algorithm, representation, complete
+        effective profile, and deterministic profile hash.
+      </p>
     </article>
     <article class="ms-card">
       <span class="ms-card__icon">03</span>
-      <h3>Trace</h3>
-      <p>Preserve input order and duplicates while recording validity,
-      matrix-row alignment, hashes, and runtime versions.</p>
+      <h3>Numerical result</h3>
+      <p>
+        Generate a representation-dependent matrix with explicit width, shape,
+        and dtype.
+      </p>
     </article>
     <article class="ms-card">
       <span class="ms-card__icon">04</span>
-      <h3>Export</h3>
-      <p>Write fingerprint matrices, per-input statuses, and encoding
-      metadata for downstream scientific workflows.</p>
+      <h3>Correspondence</h3>
+      <p>
+        Preserve the mapping between original input positions and valid matrix
+        rows together with MOLRAPTOR and RDKit versions.
+      </p>
     </article>
   </div>
 </section>
 
-## Scope
+These elements are kept separate because source identity, encoding identity,
+and numerical identity are not equivalent. Different input strings can produce
+the same numerical fingerprint, and the same input sequence can be encoded
+under different effective profiles.
 
-| MOLRAPTOR does | MOLRAPTOR does not |
-|----------------|-------------------|
-| Accept user-provided SMILES through Python, CSV, or TXT. | Retrieve molecular records from PubChem or other databases. |
-| Parse SMILES with RDKit for fingerprint calculation. | Retrieve, curate, harmonize, canonicalize, or replace the user-supplied SMILES as an input-preprocessing step. |
-| Generate supported binary, count, and MinHash molecular fingerprint representations. | Generate labels or activity classes. |
-| Record profiles, hashes, versions, and row alignment. | Select or recommend a scientifically preferred fingerprint. |
-| Preserve input order and duplicates. | Train or evaluate machine-learning models. |
-| Isolate invalid individual inputs. | Calculate molecular descriptors or 3D conformations. |
+## Representation Classes
 
-## Quick Example
+MOLRAPTOR v0.5.0 supports three numerical representation classes:
 
-```bash
-python -m pip install molraptor
+**Binary**
+Coordinates encode presence or absence according to the selected fingerprint
+algorithm.
 
-molraptor run \
-  --input molecules.csv \
-  --smiles-column SMILES \
-  --fingerprint maccs \
-  --output-dir artifacts
-```
+**Count**
+Coordinates store multiplicities in fixed-width count vectors.
 
-```python
-from molraptor import MorganFingerprintProfile, encode_fingerprints
+**MinHash**
+Coordinates form a MinHash sketch of the encoded shingle set rather than
+feature-presence bits or feature counts.
 
-profile = MorganFingerprintProfile(radius=2, fp_size=2048)
+The detailed algorithm-to-representation mapping, widths, dtypes, and usage
+examples are documented in the [Usage guide](usage.md).
 
-result = encode_fingerprints(
-    ["CCO", "not-a-smiles", "c1ccccc1"],
-    profile,
-)
+## Source-Input Boundary
 
-print(result.fingerprints.shape)
-# (2, 2048)
-```
+MOLRAPTOR operates on user-provided SMILES. It parses those strings with RDKit
+to construct the molecular graph required for fingerprint calculation.
 
-Morgan is the default fingerprint and supports configurable settings. The
-other nine algorithms use fixed effective profiles.
+It does not retrieve molecular records from external databases or curate,
+harmonize, canonicalize, or replace the supplied SMILES as an
+input-preprocessing step.
 
-The in-memory API, file workflow, and command-line interface use the same
-scientific encoding core.
+This source-input boundary does not constrain algorithm-internal
+transformations required to construct a fingerprint representation.
 
-## Documentation
+## Where to Go Next
 
-| Page | Purpose |
-|------|---------|
-| [Usage](usage.md) | Installation, CLI, CSV/TXT inputs, Python workflows, outputs, and failure handling. |
-| [API Reference](api.md) | Current public Python contracts and examples. |
-| [Changelog](changelog.md) | Project history sourced from the repository changelog. |
+| Page | Use it for |
+|------|------------|
+| [Usage](usage.md) | Installation, supported algorithms, command-line use, Python workflows, inputs, outputs, and failure handling. |
+| [API Reference](api.md) | Public Python contracts, effective profiles, representation semantics, result alignment, metadata, and hashes. |
+| [Changelog](changelog.md) | Release history and version-specific changes. |
 
-## Citation
+For bug reports, feature requests, and questions, use the
+[GitHub issue tracker](https://github.com/NanoBiostructuresRG/molraptor/issues).
 
-```text
-Contreras-Torres, F. F. (2026). MOLRAPTOR: Molecular Fingerprint Rapid Generator. Zenodo. https://doi.org/10.5281/zenodo.20434420
-```
-
-## License
-
-This project is licensed under the terms of the
-[GNU Lesser General Public License v3.0 or later](https://github.com/NanoBiostructuresRG/molraptor/blob/main/LICENSE).
-SPDX identifier: `LGPL-3.0-or-later`.
+For development and contribution instructions, see
+[CONTRIBUTING.md](https://github.com/NanoBiostructuresRG/molraptor/blob/main/CONTRIBUTING.md).
